@@ -1,11 +1,62 @@
-<div align="center">
+# प्राथमिक आरोग्य केंद्र, भादा (ता. औसा, जि. लातूर)
+## Official Health Reporting & Water Quality Management Dashboard
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+महाराष्ट्र शासन • सार्वजनिक आरोग्य विभाग • जिल्हा परिषद लातूर
 
-  <h1>Built with AI Studio</h2>
+---
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+### 🏛️ कार्यक्षेत्र व भौगोलिक रचना (Location & Subcenters)
+- **प्राथमिक आरोग्य केंद्र**: भादा (PHC Bhada), ता. औसा, जि. लातूर
+- **उपकेंद्रे (Subcenters)**:
+  1. भादा (Bhada)
+  2. आशिव (Ashiv)
+  3. उजनी (Ujani)
+  4. मंगरुळ (Mangrul)
+  5. मातोळा (Matola)
+  6. येळवट (Yelwat)
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+---
 
-</div>
+### 📊 मुख्य डेटासेट्स (Core Datasets Supported)
+1. **DataSetID 1**: पाण्याचे नमुने (TCL / Bleaching powder residual & potability)
+2. **DataSetID 2**: ब्लिचिंग पावडर नमुने (Bleaching powder sample percentage quality)
+3. **DataSetID 3**: पाणी नमुने - स्त्रोतनिहाय (Source-wise Drinking Water Sampling)
+4. **DataSetID 4**: डेंग्यू / चिकनगुनिया सीरम नमुने (Serum samples & NIV Pune format)
+5. **DataSetID 5**: मीठ नमुने (Iodized Salt testing)
+6. **DataSetID 6**: ओटी चाचणी नमुने (OT Test Water Quality)
+
+---
+
+### 🚀 मुख्य वैशिष्ट्ये (Key Modules & Features)
+
+1. **डायनॅमिक नमुना नोंदणी (Dynamic Data Entry Module)**:
+   - उपकेंद्र ➔ ग्रामपंचायत ➔ गाव अशी त्रिस्तरीय कॅस्केडिंग ड्रॉपडाऊन निवड.
+   - `ReportMaster` मेटाडेटा आधारित स्वयंचलित इनपुट रकाने.
+   - बॅच संकलन, एका क्लिकवर अनेक नमुने जोडणे आणि अनुक्रमांक व्यवस्थापन.
+
+2. **स्त्रोतनिहाय पाणी नमुना मॉड्यूल (Dataset 3 Water Sampling)**:
+   - नोंदणीकृत स्त्रोतांची यादी व चेकबॉक्स निवड.
+   - #1, #2, #3 अशी निवड क्रमांनुसार तात्काळ नोंद.
+   - मागील नमुना तपासणी दिनांक व निकाल डेटाबेसमधून आपोआप प्राप्त.
+
+3. **प्रयोगशाळा अहवाल नोंदणी (Lab Report & Attachment Module)**:
+   - दिनांक व Batch ID निहाय प्रलंबित नमुन्यांचे वर्गीकरण.
+   - अहवाल निकाल (योग्य/अयोग्य/पॉझिटिव्ह), संदर्भ क्रमांक व प्राप्त दिनांक नोंद.
+   - मूळ PDF किंवा इमेज लॅब अहवाल फाईल अपलोडिंग.
+   - जलद बॅच भरणे (Quick Batch Fill) सुविधा.
+
+4. **शासकीय पत्रे, स्टिकर्स व नोंदवही जनरेटर (Official Letters & Reports)**:
+   - **नमुना पाठवणी पत्र (Forwarding Letter)**: जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा, लातूर यांना पाठवण्यासाठी अधिकृत जावक पत्र.
+   - **नमुना स्टिकर्स (Printable Sample Stickers)**: बाटल्यांवर लावण्यासाठी छापील स्टिकर्स.
+   - **नमुना नोंदवही (Official Record Register)**: दिनांक कालावधीनुसार सर्वसमावेशक रजिस्टर.
+   - **NIV पुणे डेंग्यू फॉर्म**: National Institute of Virology, Pune साठी सीरम नमुना अहवाल.
+   - **मासिक व प्रगतीशील उपकेंद्र अहवाल (Monthly & Progressive Report)**: चालू महिना आणि जानेवारीपासूनचा प्रगतीशील सारांश व टक्केवारी.
+
+5. **डेंग्यू / चिकनगुनिया सर्वेक्षण फॉर्म (Epidemic Survey)**:
+   - भाग १: रुग्णाची माहिती.
+   - भाग २: घरातील व परिसरातील कीटकशास्त्रीय सर्वेक्षण.
+   - भाग ३: केलेल्या कार्यवाहीचा दैनिक अहवाल (तपासलेली घरे/भांडी, अॅबेटिंग, धुरफवारणी).
+
+6. **ऑडिट ट्रेल्स व बॅकअप (Audit & System Backup)**:
+   - सर्व कृतींची सुरक्षित ऑडिट नोंद.
+   - CSV व JSON स्वरूपात तात्काळ बॅकअप डाउनलोड.

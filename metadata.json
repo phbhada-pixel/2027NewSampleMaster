@@ -1,0 +1,6 @@
+{
+  "name": "PHC Bhada Sample Master & Laboratory Reporting System",
+  "description": "Primary Health Centre Bhada - Sample Master, Dispatch, Laboratory Reports, Government-Format Letters, Report Updates & Master Register System",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
