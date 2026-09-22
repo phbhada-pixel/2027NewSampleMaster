@@ -86,6 +86,9 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
   const [epistaxisPresent, setEpistaxisPresent] = useState<boolean>(false);
   const [epistaxisDurationDays, setEpistaxisDurationDays] = useState<string>('');
 
+  const [petechiaePresent, setPetechiaePresent] = useState<boolean>(false);
+  const [petechiaeDurationDays, setPetechiaeDurationDays] = useState<string>('');
+
   const [melenaPresent, setMelenaPresent] = useState<boolean>(false);
   const [melenaDurationDays, setMelenaDurationDays] = useState<string>('');
 
@@ -143,7 +146,7 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
 
   // Haemorrhagic toggle helper
   const handleHaemorrhagicToggle = (
-    key: 'hematemesis' | 'epistaxis' | 'melena' | 'other',
+    key: 'hematemesis' | 'epistaxis' | 'petechiae' | 'melena' | 'other',
     present: boolean
   ) => {
     if (key === 'hematemesis') {
@@ -152,6 +155,9 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
     } else if (key === 'epistaxis') {
       setEpistaxisPresent(present);
       if (!present) setEpistaxisDurationDays('');
+    } else if (key === 'petechiae') {
+      setPetechiaePresent(present);
+      if (!present) setPetechiaeDurationDays('');
     } else if (key === 'melena') {
       setMelenaPresent(present);
       if (!present) setMelenaDurationDays('');
@@ -197,6 +203,8 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
     setHematemesisDurationDays('');
     setEpistaxisPresent(false);
     setEpistaxisDurationDays('');
+    setPetechiaePresent(false);
+    setPetechiaeDurationDays('');
     setMelenaPresent(false);
     setMelenaDurationDays('');
     setOtherHemorrhagicPresent(false);
@@ -311,6 +319,13 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
       }
     }
 
+    if (petechiaePresent) {
+      const d = parseInt(petechiaeDurationDays, 10);
+      if (!petechiaeDurationDays || isNaN(d) || d <= 0) {
+        missing.push('त्वचेवर ठिपके (Petechiae): किती दिवसांपासून आहे त्याचा वैध कालावधी (दिवस) प्रविष्ट करा.');
+      }
+    }
+
     if (melenaPresent) {
       const d = parseInt(melenaDurationDays, 10);
       if (!melenaDurationDays || isNaN(d) || d <= 0) {
@@ -362,11 +377,12 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
 
       const hematemesisNum = hematemesisPresent ? parseInt(hematemesisDurationDays, 10) : null;
       const epistaxisNum = epistaxisPresent ? parseInt(epistaxisDurationDays, 10) : null;
+      const petechiaeNum = petechiaePresent ? parseInt(petechiaeDurationDays, 10) : null;
       const melenaNum = melenaPresent ? parseInt(melenaDurationDays, 10) : null;
       const otherNum = otherHemorrhagicPresent ? parseInt(otherHemorrhagicDurationDays, 10) : null;
 
       const hasAnyHaemorrhagic =
-        hematemesisPresent || epistaxisPresent || melenaPresent || otherHemorrhagicPresent;
+        hematemesisPresent || epistaxisPresent || petechiaePresent || melenaPresent || otherHemorrhagicPresent;
 
       const created = clientStore.addSample({
         sampleTypeId: 'ST-006',
@@ -419,11 +435,22 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
         rashDurationDays: rashNum,
 
         // Structured Haemorrhagic Manifestations Model
+        haemorrhagicManifestations: {
+          hematemesis: hematemesisPresent,
+          epistaxis: epistaxisPresent,
+          petechiae: petechiaePresent,
+          melena: melenaPresent,
+          other: otherHemorrhagicPresent ? otherHemorrhagicDescription.trim() : undefined,
+        },
+
         hematemesisPresent: hematemesisPresent ? 'Yes' : 'No',
         hematemesisDurationDays: hematemesisNum,
 
         epistaxisPresent: epistaxisPresent ? 'Yes' : 'No',
         epistaxisDurationDays: epistaxisNum,
+
+        petechiaePresent: petechiaePresent ? 'Yes' : 'No',
+        petechiaeDurationDays: petechiaeNum,
 
         melenaPresent: melenaPresent ? 'Yes' : 'No',
         melenaDurationDays: melenaNum,
@@ -460,8 +487,13 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
 
         haemorrhagicManifestation: hasAnyHaemorrhagic ? 'होय' : 'नाही',
         hematemesis: hematemesisPresent ? 'होय' : 'नाही',
+        hematemesisDuration: hematemesisNum !== null ? `${hematemesisNum} Days` : undefined,
         epistaxis: epistaxisPresent ? 'होय' : 'नाही',
+        epistaxisDuration: epistaxisNum !== null ? `${epistaxisNum} Days` : undefined,
+        petechiae: petechiaePresent ? 'होय' : 'नाही',
+        petechiaeDuration: petechiaeNum !== null ? `${petechiaeNum} Days` : undefined,
         melena: melenaPresent ? 'होय' : 'नाही',
+        melenaDuration: melenaNum !== null ? `${melenaNum} Days` : undefined,
         otherHaemorrhagic: otherHemorrhagicPresent ? otherHemorrhagicDescription.trim() : 'None',
 
         remarks: remarks.trim() || 'डेंग्यू / चिकनगुनिया संशयित सिरम नमुना',
@@ -1312,10 +1344,62 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
               )}
             </div>
 
-            {/* c. Melena */}
+            {/* c. Petechiae */}
             <div className="p-3 bg-white rounded border border-slate-200">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-800">३. काळी विष्ठा (Melena)</span>
+                <span className="font-semibold text-slate-800">३. त्वचेवर ठिपके (Petechiae)</span>
+                <div className="inline-flex rounded-md shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleHaemorrhagicToggle('petechiae', true)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-l-md border transition-colors ${
+                      petechiaePresent
+                        ? 'bg-rose-600 text-white border-rose-600'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleHaemorrhagicToggle('petechiae', false)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-r-md border border-l-0 transition-colors ${
+                      !petechiaePresent
+                        ? 'bg-slate-700 text-white border-slate-700'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+              {petechiaePresent && (
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-slate-600">किती दिवसांपासून?</span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      required
+                      placeholder="दिवस"
+                      value={petechiaeDurationDays}
+                      onKeyDown={(e) => {
+                        if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault();
+                      }}
+                      onChange={(e) => setPetechiaeDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="w-16 bg-white border border-rose-300 rounded px-2 py-1 text-xs font-bold text-center font-mono focus:ring-2 focus:ring-rose-500"
+                    />
+                    <span className="text-[11px] text-slate-600 font-semibold">दिवस</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* d. Melena */}
+            <div className="p-3 bg-white rounded border border-slate-200">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-800">४. काळी विष्ठा (Melena)</span>
                 <div className="inline-flex rounded-md shadow-xs">
                   <button
                     type="button"
@@ -1364,10 +1448,10 @@ export const DengueEntrySubModule: React.FC<DengueEntrySubModuleProps> = ({
               )}
             </div>
 
-            {/* d. Other */}
+            {/* e. Other */}
             <div className="p-3 bg-white rounded border border-slate-200">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-800">४. इतर रक्तस्राव (Other)</span>
+                <span className="font-semibold text-slate-800">५. इतर रक्तस्राव (Other)</span>
                 <div className="inline-flex rounded-md shadow-xs">
                   <button
                     type="button"

@@ -62,6 +62,7 @@ export const DengueCaseHistoryPrint: React.FC<DengueCaseHistoryPrintProps> = ({
   const isHaemorrhagicYes =
     sample.hematemesisPresent === 'Yes' ||
     sample.epistaxisPresent === 'Yes' ||
+    sample.petechiaePresent === 'Yes' ||
     sample.melenaPresent === 'Yes' ||
     sample.otherHemorrhagicPresent === 'Yes' ||
     sample.otherHaemorrhagicPresent === 'Yes' ||
@@ -69,6 +70,7 @@ export const DengueCaseHistoryPrint: React.FC<DengueCaseHistoryPrintProps> = ({
     sample.haemorrhagicManifestation === 'Yes' ||
     Boolean(sample.hematemesis && sample.hematemesis !== 'नाही' && sample.hematemesis !== 'No') ||
     Boolean(sample.epistaxis && sample.epistaxis !== 'नाही' && sample.epistaxis !== 'No') ||
+    Boolean(sample.petechiae && sample.petechiae !== 'नाही' && sample.petechiae !== 'No') ||
     Boolean(sample.melena && sample.melena !== 'नाही' && sample.melena !== 'No') ||
     Boolean(
       sample.otherHaemorrhagic &&
@@ -303,25 +305,32 @@ export const DengueCaseHistoryPrint: React.FC<DengueCaseHistoryPrintProps> = ({
                 <span className="w-40 shrink-0 font-medium">a. Hematemesis</span>
                 <span className="font-bold mr-2">:</span>
                 <span className="border-b border-dotted border-slate-900 flex-1">
-                  {formatSymptomFinding(sample.hematemesisPresent, sample.hematemesisDurationDays, sample.hematemesis)}
+                  {formatSymptomFinding(sample.hematemesisPresent, sample.hematemesisDurationDays, sample.hematemesisDuration || sample.hematemesis)}
                 </span>
               </div>
               <div className="flex items-baseline">
                 <span className="w-40 shrink-0 font-medium">b. Epistaxis</span>
                 <span className="font-bold mr-2">:</span>
                 <span className="border-b border-dotted border-slate-900 flex-1">
-                  {formatSymptomFinding(sample.epistaxisPresent, sample.epistaxisDurationDays, sample.epistaxis)}
+                  {formatSymptomFinding(sample.epistaxisPresent, sample.epistaxisDurationDays, sample.epistaxisDuration || sample.epistaxis)}
                 </span>
               </div>
               <div className="flex items-baseline">
-                <span className="w-40 shrink-0 font-medium">c. Melena</span>
+                <span className="w-40 shrink-0 font-medium">c. Petechiae</span>
                 <span className="font-bold mr-2">:</span>
                 <span className="border-b border-dotted border-slate-900 flex-1">
-                  {formatSymptomFinding(sample.melenaPresent, sample.melenaDurationDays, sample.melena)}
+                  {formatSymptomFinding(sample.petechiaePresent, sample.petechiaeDurationDays, sample.petechiaeDuration || sample.petechiae)}
                 </span>
               </div>
               <div className="flex items-baseline">
-                <span className="w-40 shrink-0 font-medium">d. Other</span>
+                <span className="w-40 shrink-0 font-medium">d. Melena</span>
+                <span className="font-bold mr-2">:</span>
+                <span className="border-b border-dotted border-slate-900 flex-1">
+                  {formatSymptomFinding(sample.melenaPresent, sample.melenaDurationDays, sample.melenaDuration || sample.melena)}
+                </span>
+              </div>
+              <div className="flex items-baseline">
+                <span className="w-40 shrink-0 font-medium">e. Other</span>
                 <span className="font-bold mr-2">:</span>
                 <span className="border-b border-dotted border-slate-900 flex-1">
                   {sample.otherHemorrhagicPresent === 'Yes' || sample.otherHaemorrhagicPresent === 'Yes'

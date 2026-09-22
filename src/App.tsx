@@ -66,6 +66,7 @@ export default function App() {
           <SampleEntryModule
             currentUser={currentUser}
             initialSampleTypeId={navigationFilter.sampleTypeId}
+            onNavigate={handleNavigate}
             onSampleCreated={(sample) => {
               // Option to jump or keep adding
             }}
@@ -97,7 +98,18 @@ export default function App() {
 
         {/* 6. Monthly & Progressive Sample Reporting */}
         {activeTab === 'monthly-report' && (
-          <MonthlySampleReportModule currentUser={currentUser} />
+          <MonthlySampleReportModule
+            currentUser={currentUser}
+            initialTab={(navigationFilter as any)?.initialTab || 'monthly'}
+            onNavigateToSampleEntry={(sourceInfo) => {
+              handleNavigate('sample-entry', {
+                sampleTypeId: sourceInfo.sampleTypeId,
+                subcenterId: sourceInfo.subcenterId,
+                villageId: sourceInfo.villageId,
+                sourceId: sourceInfo.sourceId,
+              });
+            }}
+          />
         )}
 
         {/* 7. Reports & Analytics */}

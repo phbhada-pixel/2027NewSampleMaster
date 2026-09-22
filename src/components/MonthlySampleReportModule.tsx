@@ -29,10 +29,21 @@ import {
   Award,
   ShieldCheck,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
+import { WaterBiologicalOverdueReportView } from './WaterBiologicalOverdueReportView';
+import { MonthlySubcenterWaterPlanView } from './MonthlySubcenterWaterPlanView';
 
 interface MonthlySampleReportModuleProps {
   currentUser: User;
+  initialTab?: 'monthly' | 'progressive' | 'sample-type' | 'consolidated' | 'subcenter' | 'village' | 'trend' | 'water-overdue-3m' | 'monthly-water-subcenter';
+  onNavigateToSampleEntry?: (sourceInfo: {
+    sampleTypeId: string;
+    subcenterId: string;
+    villageId: string;
+    sourceId: string;
+    sourceName: string;
+  }) => void;
 }
 
 // Result classification types per User Request Section C
@@ -116,7 +127,11 @@ const MONTHS_MARATHI = [
   { value: 12, label: 'डिसेंबर (Dec)', name: 'डिसेंबर' },
 ];
 
-export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps> = ({ currentUser }) => {
+export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps> = ({
+  currentUser,
+  initialTab = 'monthly',
+  onNavigateToSampleEntry,
+}) => {
   const [, setTick] = useState(0);
   useEffect(() => {
     return clientStore.subscribe(() => setTick((t) => t + 1));
@@ -139,10 +154,24 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
   const [resultFilter, setResultFilter] = useState<string>('ALL');
 
   // Active View Tab
-  // 1: मासिक अहवाल, 2: प्रोग्रेसिव्ह अहवाल, 3: Sample Type-wise, 4: एकत्रित अहवाल, 5: उपकेंद्रनिहाय, 6: गावनिहाय, 7: मासिक ट्रेंड
+  // 1: मासिक अहवाल, 2: प्रोग्रेसिव्ह अहवाल, 3: Sample Type-wise, 4: एकत्रित अहवाल, 5: उपकेंद्रनिहाय, 6: गावनिहाय, 7: मासिक ट्रेंड, 8: ३ महिने प्रलंबित पाणी स्त्रोत, 9: उपकेंद्रनिहाय मासिक पाणी यादी
   const [activeTab, setActiveTab] = useState<
-    'monthly' | 'progressive' | 'sample-type' | 'consolidated' | 'subcenter' | 'village' | 'trend'
-  >('monthly');
+    | 'monthly'
+    | 'progressive'
+    | 'sample-type'
+    | 'consolidated'
+    | 'subcenter'
+    | 'village'
+    | 'trend'
+    | 'water-overdue-3m'
+    | 'monthly-water-subcenter'
+  >(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Consolidated Timeframe Toggle ('monthly' or 'progressive')
   const [consolidatedTimeframe, setConsolidatedTimeframe] = useState<'monthly' | 'progressive'>('monthly');
@@ -1083,6 +1112,28 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
           >
             ७. मासिक ट्रेंड व प्रगती
           </button>
+          <button
+            onClick={() => setActiveTab('water-overdue-3m')}
+            className={`px-4 py-2.5 rounded-lg whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              activeTab === 'water-overdue-3m'
+                ? 'bg-rose-800 text-white shadow-sm font-black'
+                : 'hover:bg-rose-50 text-rose-800 font-bold'
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+            <span>८. पाणी स्रोत - ३ महिने प्रलंबित</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('monthly-water-subcenter')}
+            className={`px-4 py-2.5 rounded-lg whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              activeTab === 'monthly-water-subcenter'
+                ? 'bg-teal-800 text-white shadow-sm font-black'
+                : 'hover:bg-teal-50 text-teal-800 font-bold'
+            }`}
+          >
+            <Droplets className="w-3.5 h-3.5 text-teal-400" />
+            <span>९. उपकेंद्रनिहाय मासिक पाणी यादी</span>
+          </button>
         </div>
       </div>
 
@@ -1937,6 +1988,26 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
             </table>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 8: WATER SOURCES 3-MONTHS OVERDUE BIOLOGICAL REPORT */}
+      {/* ========================================================================= */}
+      {activeTab === 'water-overdue-3m' && (
+        <WaterBiologicalOverdueReportView
+          currentUser={currentUser}
+          onNavigateToSampleEntry={onNavigateToSampleEntry}
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 9: MONTHLY SUBCENTER-WISE WATER SAMPLE PLAN & LIST */}
+      {/* ========================================================================= */}
+      {activeTab === 'monthly-water-subcenter' && (
+        <MonthlySubcenterWaterPlanView
+          currentUser={currentUser}
+          onNavigateToSampleEntry={onNavigateToSampleEntry}
+        />
       )}
 
       {/* ========================================================================= */}

@@ -18,6 +18,9 @@ import {
   SubcenterVillageImportSummary,
   PendingSyncOperation,
   DispatchSampleRecord,
+  WaterSourceOverdueItem,
+  WaterSourceMonthlyStatusItem,
+  SubcenterMonthlyWaterPlan,
 } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -601,12 +604,12 @@ const DEFAULT_SOURCES: SourceMaster[] = [
     updatedAt: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'SRC-LKH-005',
+    id: 'SRC-LKH-007',
     villageId: 'VIL-002',
     villageName: 'लखनगाव',
     sampleTypeId: 'ST-002',
     sampleTypeName: 'Water Sample – Chemical Examination',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर',
+    sourceName: 'मुख्य ग्रामपंचायत विहीर क्र. २',
     sourceCode: 'LKH-W02',
     sourceType: 'विहीर',
     locationAddress: 'मारुती मंदिराशेजारी, लखनगाव',
@@ -657,6 +660,194 @@ const DEFAULT_SOURCES: SourceMaster[] = [
     locationAddress: 'ग्रामपंचायत जवळ, बोरगाव',
     isActive: true,
     remarks: 'रासायनिक तपासणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+
+  // Uti Bk Sources
+  {
+    id: 'SRC-UTI-001',
+    villageId: 'VIL-003',
+    villageName: 'उटी बु.',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'ग्रामपंचायत मुख्य विहीर',
+    sourceCode: 'UTI-W01',
+    sourceType: 'विहीर',
+    locationAddress: 'मारुती मंदिर परिसर, उटी बु.',
+    isActive: true,
+    remarks: 'सार्वजनिक पिण्याचे पाणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-UTI-002',
+    villageId: 'VIL-003',
+    villageName: 'उटी बु.',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'जि.प. शाळा हातपंप',
+    sourceCode: 'UTI-HP01',
+    sourceType: 'हातपंप',
+    locationAddress: 'प्राथमिक शाळा आवार, उटी बु.',
+    isActive: true,
+    remarks: 'शाळा पिण्याचे पाणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-UTI-003',
+    villageId: 'VIL-003',
+    villageName: 'उटी बु.',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'सार्वजनिक पाण्याची टाकी (ESR)',
+    sourceCode: 'UTI-TK01',
+    sourceType: 'सार्वजनिक टाकी',
+    locationAddress: 'गावठाण टाकी, उटी बु.',
+    isActive: true,
+    remarks: 'नळ वितरण टाकी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+
+  // Ashiv Sources
+  {
+    id: 'SRC-ASH-001',
+    villageId: 'VIL-004',
+    villageName: 'आशिव',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'मुख्य नळ योजना विहीर',
+    sourceCode: 'ASH-W01',
+    sourceType: 'नळ योजना',
+    locationAddress: 'नदीकाठ विहीर, आशिव',
+    isActive: true,
+    remarks: 'सार्वजनिक पाणी योजना',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-ASH-002',
+    villageId: 'VIL-004',
+    villageName: 'आशिव',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'ग्रामपंचायत सार्वजनिक हातपंप',
+    sourceCode: 'ASH-HP01',
+    sourceType: 'हातपंप',
+    locationAddress: 'बस स्टँड चौक, आशिव',
+    isActive: true,
+    remarks: 'सार्वजनिक हातपंप',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-ASH-003',
+    villageId: 'VIL-004',
+    villageName: 'आशिव',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'जि.प. शाळा कूपनलिका',
+    sourceCode: 'ASH-BW01',
+    sourceType: 'कूपनलिका',
+    locationAddress: 'केंद्रीय प्राथमिक शाळा, आशिव',
+    isActive: true,
+    remarks: 'शाळा परिसर स्त्रोत',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+
+  // Ujani Sources
+  {
+    id: 'SRC-UJN-001',
+    villageId: 'VIL-005',
+    villageName: 'उजनी',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'ग्रामपंचायत मुख्य विहीर',
+    sourceCode: 'UJN-W01',
+    sourceType: 'विहीर',
+    locationAddress: 'गावठाण परिसर, उजनी',
+    isActive: true,
+    remarks: 'मुख्य सार्वजनिक स्त्रोत',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-UJN-002',
+    villageId: 'VIL-005',
+    villageName: 'उजनी',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'सार्वजनिक पाण्याची टाकी (ESR)',
+    sourceCode: 'UJN-TK01',
+    sourceType: 'सार्वजनिक टाकी',
+    locationAddress: 'उजनी मध्यवर्ती टाकी',
+    isActive: true,
+    remarks: 'नळ वितरण टाकी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-UJN-003',
+    villageId: 'VIL-005',
+    villageName: 'उजनी',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'स्मशानभूमी जवळील हातपंप',
+    sourceCode: 'UJN-HP01',
+    sourceType: 'हातपंप',
+    locationAddress: 'उजनी शिवार',
+    isActive: true,
+    remarks: 'हातपंप',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+
+  // Lohata Sources
+  {
+    id: 'SRC-LHT-001',
+    villageId: 'VIL-006',
+    villageName: 'लोहटा',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
+    sourceCode: 'LHT-W01',
+    sourceType: 'नळ योजना',
+    locationAddress: 'लोहटा शिवार',
+    isActive: true,
+    remarks: 'सार्वजनिक नळ योजना',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-LHT-002',
+    villageId: 'VIL-006',
+    villageName: 'लोहटा',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'जि.प. शाळा हातपंप',
+    sourceCode: 'LHT-HP01',
+    sourceType: 'हातपंप',
+    locationAddress: 'शाळा परिसर, लोहटा',
+    isActive: true,
+    remarks: 'शाळा पिण्याचे पाणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-LHT-003',
+    villageId: 'VIL-006',
+    villageName: 'लोहटा',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'सार्वजनिक कूपनलिका',
+    sourceCode: 'LHT-BW01',
+    sourceType: 'कूपनलिका',
+    locationAddress: 'बौद्ध नगर, लोहटा',
+    isActive: true,
+    remarks: 'सार्वजनिक कूपनलिका',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
@@ -1908,6 +2099,20 @@ class ClientDataStore {
     this.subcenters = getFromStorage(STORAGE_KEYS.SUBCENTERS, DEFAULT_SUBCENTERS);
     this.villages = getFromStorage(STORAGE_KEYS.VILLAGES, DEFAULT_VILLAGES);
     this.sources = getFromStorage(STORAGE_KEYS.SOURCES, DEFAULT_SOURCES);
+    // Deduplicate sources by ID to guarantee unique React keys across updates
+    const seenSourceIds = new Set<string>();
+    let sourcesModified = false;
+    this.sources = this.sources.filter((s) => {
+      if (!s.id || seenSourceIds.has(s.id)) {
+        sourcesModified = true;
+        return false;
+      }
+      seenSourceIds.add(s.id);
+      return true;
+    });
+    if (sourcesModified) {
+      saveToStorage(STORAGE_KEYS.SOURCES, this.sources);
+    }
     this.samples = getFromStorage(STORAGE_KEYS.SAMPLES, DEFAULT_SAMPLES);
     this.sendingLetters = getFromStorage(STORAGE_KEYS.SENDING_LETTERS, DEFAULT_LETTERS);
     this.dispatchSamples = getFromStorage(STORAGE_KEYS.DISPATCH_SAMPLES, []);
@@ -1987,6 +2192,18 @@ class ClientDataStore {
       saveToStorage(STORAGE_KEYS.VILLAGES, this.villages);
     }
     saveToStorage(STORAGE_KEYS.SUBCENTERS, this.subcenters);
+
+    // 1b. Ensure all default sources exist in this.sources
+    let sourcesModified = false;
+    for (const defSrc of DEFAULT_SOURCES) {
+      if (!this.sources.some((s) => s.id === defSrc.id)) {
+        this.sources.push({ ...defSrc });
+        sourcesModified = true;
+      }
+    }
+    if (sourcesModified) {
+      saveToStorage(STORAGE_KEYS.SOURCES, this.sources);
+    }
 
     // 2. Ensure all default samples exist in this.samples
     for (const defSmp of DEFAULT_SAMPLES) {
@@ -2904,8 +3121,12 @@ class ClientDataStore {
     const sampleType = this.sampleTypes.find((st) => st.id === sourceData.sampleTypeId);
 
     const prefix = village ? village.code : 'SRC';
-    const count = this.sources.filter((s) => s.villageId === sourceData.villageId).length + 1;
-    const newId = `SRC-${prefix}-${String(count).padStart(3, '0')}`;
+    let seq = this.sources.filter((s) => s.villageId === sourceData.villageId).length + 1;
+    let newId = `SRC-${prefix}-${String(seq).padStart(3, '0')}`;
+    while (this.sources.some((s) => s.id === newId)) {
+      seq++;
+      newId = `SRC-${prefix}-${String(seq).padStart(3, '0')}`;
+    }
 
     const newSource: SourceMaster = {
       ...sourceData,
@@ -3083,13 +3304,13 @@ class ClientDataStore {
       }
     }
 
-    // Starting from 1 and continuing 1, 2, 3, 4, 5...
+    // Starting from 1 and continuing 1, 2, 3, 4, 5... (अनुक्रमांक)
     let nextNum = 1;
     while (usedNumbers.has(nextNum)) {
       nextNum++;
     }
 
-    return `Bottle No. ${nextNum}`;
+    return `${nextNum}`;
   }
 
   getSamples(filter?: {
@@ -3195,6 +3416,264 @@ class ClientDataStore {
 
   getSampleById(id: string): SampleRecord | null {
     return this.samples.find((s) => s.id === id) || null;
+  }
+
+  /**
+   * Returns a comprehensive list and analysis of water sources regarding biological examination (ST-001 / WS-BIO),
+   * highlighting sources that have not been tested in the last 3 months (90 days) or never tested.
+   */
+  getWaterSourcesBiologicalDueReport(options?: {
+    subcenterId?: string;
+    villageId?: string;
+    referenceDate?: string; // YYYY-MM-DD, defaults to current date
+    filterCategory?: 'ALL' | 'OVERDUE_ONLY' | 'OVERDUE_3M' | 'OVERDUE_6M' | 'CRITICAL_NEVER' | 'TIMELY';
+  }): {
+    items: WaterSourceOverdueItem[];
+    stats: {
+      totalWaterSources: number;
+      testedIn3MonthsCount: number;
+      overdue3MonthsCount: number;
+      overdue6MonthsCount: number;
+      neverTestedCount: number;
+      testedThisMonthCount: number;
+      complianceRate: number;
+    };
+  } {
+    const refDateStr = options?.referenceDate || new Date().toISOString().split('T')[0];
+    const refDate = new Date(refDateStr);
+    const refYear = refDate.getFullYear();
+    const refMonth = refDate.getMonth() + 1;
+
+    // Filter water sources
+    const activeSources = this.sources.filter((src) => {
+      if (!src.isActive) return false;
+      if (options?.villageId && options.villageId !== 'ALL' && src.villageId !== options.villageId) return false;
+      if (options?.subcenterId && options.subcenterId !== 'ALL') {
+        const v = this.villages.find((vil) => vil.id === src.villageId);
+        if (v && v.subcenterId !== options.subcenterId) return false;
+      }
+      return true;
+    });
+
+    // Biological water samples (ST-001)
+    const bioSamples = this.samples.filter(
+      (s) => s.isActive && (s.sampleTypeId === 'ST-001' || s.sampleTypeName?.includes('Bacteriological') || s.sampleTypeName?.includes('जैविक'))
+    );
+
+    const items: WaterSourceOverdueItem[] = [];
+
+    let totalWaterSources = 0;
+    let testedIn3MonthsCount = 0;
+    let overdue3MonthsCount = 0;
+    let overdue6MonthsCount = 0;
+    let neverTestedCount = 0;
+    let testedThisMonthCount = 0;
+
+    for (const src of activeSources) {
+      const v = this.villages.find((vil) => vil.id === src.villageId);
+      const sc = v?.subcenterId ? this.subcenters.find((s) => s.id === v.subcenterId) : null;
+      const subcenterId = v?.subcenterId || '';
+      const subcenterName = sc?.subcenterName || v?.subcenterName || v?.subcenter || 'भादा';
+
+      // Find all biological samples for this source
+      const matchedSamples = bioSamples.filter(
+        (s) => (s.sourceId && s.sourceId === src.id) || (s.villageId === src.villageId && s.sourceName === src.sourceName)
+      ).sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime());
+
+      const latestBioSample = matchedSamples[0] || null;
+      const lastTestedDate = latestBioSample?.collectionDate || null;
+
+      let daysSinceLastTest: number | null = null;
+      let monthsSinceLastTest: number | null = null;
+
+      if (lastTestedDate) {
+        const testDate = new Date(lastTestedDate);
+        const diffMs = refDate.getTime() - testDate.getTime();
+        daysSinceLastTest = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+        monthsSinceLastTest = Number((daysSinceLastTest / 30.4).toFixed(1));
+      }
+
+      const isNeverTested = !latestBioSample;
+      const isOverdue3Months = isNeverTested || (daysSinceLastTest !== null && daysSinceLastTest > 90);
+      const isOverdue6Months = isNeverTested || (daysSinceLastTest !== null && daysSinceLastTest > 180);
+
+      let overdueCategory: 'CRITICAL_NEVER' | 'OVERDUE_6M' | 'OVERDUE_3M' | 'TIMELY' = 'TIMELY';
+      if (isNeverTested) {
+        overdueCategory = 'CRITICAL_NEVER';
+      } else if (daysSinceLastTest !== null && daysSinceLastTest > 180) {
+        overdueCategory = 'OVERDUE_6M';
+      } else if (daysSinceLastTest !== null && daysSinceLastTest > 90) {
+        overdueCategory = 'OVERDUE_3M';
+      } else {
+        overdueCategory = 'TIMELY';
+      }
+
+      // Check if tested in reference month
+      const thisMonthSample = matchedSamples.find((s) => {
+        const d = new Date(s.collectionDate);
+        return d.getFullYear() === refYear && d.getMonth() + 1 === refMonth;
+      });
+      const testedThisMonth = Boolean(thisMonthSample);
+
+      totalWaterSources++;
+      if (testedThisMonth) testedThisMonthCount++;
+      if (isNeverTested) {
+        neverTestedCount++;
+        overdue3MonthsCount++;
+        overdue6MonthsCount++;
+      } else if (daysSinceLastTest !== null && daysSinceLastTest > 180) {
+        overdue6MonthsCount++;
+        overdue3MonthsCount++;
+      } else if (daysSinceLastTest !== null && daysSinceLastTest > 90) {
+        overdue3MonthsCount++;
+      } else {
+        testedIn3MonthsCount++;
+      }
+
+      const item: WaterSourceOverdueItem = {
+        source: src,
+        subcenterId,
+        subcenterName,
+        villageId: src.villageId,
+        villageName: src.villageName || v?.name || '',
+        sourceName: src.sourceName,
+        sourceCode: src.sourceCode,
+        sourceType: src.sourceType,
+        locationAddress: src.locationAddress,
+        latestBioSample,
+        lastTestedDate,
+        daysSinceLastTest,
+        monthsSinceLastTest,
+        isOverdue3Months,
+        isOverdue6Months,
+        isNeverTested,
+        overdueCategory,
+        lastResult: latestBioSample?.result || '-',
+        testedThisMonth,
+        thisMonthSample,
+      };
+
+      // Apply category filter if given
+      if (options?.filterCategory === 'OVERDUE_ONLY' && !isOverdue3Months) continue;
+      if (options?.filterCategory === 'OVERDUE_3M' && overdueCategory !== 'OVERDUE_3M' && overdueCategory !== 'OVERDUE_6M' && overdueCategory !== 'CRITICAL_NEVER') continue;
+      if (options?.filterCategory === 'OVERDUE_6M' && overdueCategory !== 'OVERDUE_6M' && overdueCategory !== 'CRITICAL_NEVER') continue;
+      if (options?.filterCategory === 'CRITICAL_NEVER' && overdueCategory !== 'CRITICAL_NEVER') continue;
+      if (options?.filterCategory === 'TIMELY' && overdueCategory !== 'TIMELY') continue;
+
+      items.push(item);
+    }
+
+    // Sort items: Most critical (Never tested -> longest overdue -> recent)
+    items.sort((a, b) => {
+      if (a.isNeverTested && !b.isNeverTested) return -1;
+      if (!a.isNeverTested && b.isNeverTested) return 1;
+      const daysA = a.daysSinceLastTest ?? 99999;
+      const daysB = b.daysSinceLastTest ?? 99999;
+      return daysB - daysA;
+    });
+
+    const complianceRate = totalWaterSources > 0 ? Math.round((testedIn3MonthsCount / totalWaterSources) * 100) : 0;
+
+    return {
+      items,
+      stats: {
+        totalWaterSources,
+        testedIn3MonthsCount,
+        overdue3MonthsCount,
+        overdue6MonthsCount,
+        neverTestedCount,
+        testedThisMonthCount,
+        complianceRate,
+      },
+    };
+  }
+
+  /**
+   * Subcenter-wise Monthly Water Sampling Plan & Status
+   */
+  getMonthlySubcenterWaterPlan(year: number, month: number, subcenterId?: string): {
+    plans: SubcenterMonthlyWaterPlan[];
+    overall: {
+      totalSources: number;
+      totalTestedThisMonth: number;
+      totalPendingThisMonth: number;
+      totalOverdue3Months: number;
+      overallCoveragePercentage: number;
+    };
+  } {
+    const plans: SubcenterMonthlyWaterPlan[] = [];
+    const subcentersList = subcenterId && subcenterId !== 'ALL'
+      ? this.subcenters.filter((s) => s.id === subcenterId)
+      : this.subcenters;
+
+    const dueReport = this.getWaterSourcesBiologicalDueReport({
+      referenceDate: `${year}-${String(month).padStart(2, '0')}-01`,
+    });
+
+    let totalSources = 0;
+    let totalTestedThisMonth = 0;
+    let totalPendingThisMonth = 0;
+    let totalOverdue3Months = 0;
+
+    for (const sc of subcentersList) {
+      const scSources = dueReport.items.filter((item) => item.subcenterId === sc.id);
+
+      const sourcesList: WaterSourceMonthlyStatusItem[] = scSources.map((item) => ({
+        source: item.source,
+        subcenterId: sc.id,
+        subcenterName: sc.subcenterName,
+        villageId: item.villageId,
+        villageName: item.villageName,
+        sourceName: item.sourceName,
+        sourceCode: item.sourceCode,
+        sourceType: item.sourceType,
+        locationAddress: item.locationAddress,
+        testedThisMonth: item.testedThisMonth,
+        thisMonthSample: item.thisMonthSample,
+        lastTestedDate: item.lastTestedDate,
+        daysSinceLastTest: item.daysSinceLastTest,
+        monthsSinceLastTest: item.monthsSinceLastTest,
+        isOverdue3Months: item.isOverdue3Months,
+        lastResult: item.lastResult,
+      }));
+
+      const scTotal = sourcesList.length;
+      const scTested = sourcesList.filter((s) => s.testedThisMonth).length;
+      const scPending = scTotal - scTested;
+      const scOverdue = sourcesList.filter((s) => s.isOverdue3Months).length;
+      const scCoverage = scTotal > 0 ? Math.round((scTested / scTotal) * 100) : 0;
+
+      totalSources += scTotal;
+      totalTestedThisMonth += scTested;
+      totalPendingThisMonth += scPending;
+      totalOverdue3Months += scOverdue;
+
+      plans.push({
+        subcenterId: sc.id,
+        subcenterCode: sc.subcenterCode,
+        subcenterName: sc.subcenterName,
+        marathiName: sc.marathiName,
+        totalSources: scTotal,
+        testedThisMonthCount: scTested,
+        pendingThisMonthCount: scPending,
+        overdue3MonthsCount: scOverdue,
+        coveragePercentage: scCoverage,
+        sourcesList,
+      });
+    }
+
+    const overallCoveragePercentage = totalSources > 0 ? Math.round((totalTestedThisMonth / totalSources) * 100) : 0;
+
+    return {
+      plans,
+      overall: {
+        totalSources,
+        totalTestedThisMonth,
+        totalPendingThisMonth,
+        totalOverdue3Months,
+        overallCoveragePercentage,
+      },
+    };
   }
 
   checkDuplicateSample(params: {

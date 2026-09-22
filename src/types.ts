@@ -195,15 +195,26 @@ export interface SampleRecord {
   };
   haemorrhagicManifestation?: string; // 'नाही' | 'होय'
   hematemesis?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
-  epistaxis?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
-  melena?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
-  otherHaemorrhagic?: string; // Details if other
+  hematemesisDuration?: string;
   hematemesisPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
   hematemesisDurationDays?: number | null;
+
+  epistaxis?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
+  epistaxisDuration?: string;
   epistaxisPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
   epistaxisDurationDays?: number | null;
+
+  petechiae?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
+  petechiaeDuration?: string;
+  petechiaePresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  petechiaeDurationDays?: number | null;
+
+  melena?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
+  melenaDuration?: string;
   melenaPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
   melenaDurationDays?: number | null;
+
+  otherHaemorrhagic?: string; // Details if other
   otherHemorrhagicPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
   otherHemorrhagicDescription?: string;
   otherHemorrhagicDurationDays?: number | null;
@@ -362,5 +373,60 @@ export interface DispatchSampleRecord {
   villageName: string;
   sourceName?: string;
   createdAt: string;
+}
+
+export interface WaterSourceOverdueItem {
+  source: SourceMaster;
+  subcenterId: string;
+  subcenterName: string;
+  villageId: string;
+  villageName: string;
+  sourceName: string;
+  sourceCode: string;
+  sourceType: string;
+  locationAddress: string;
+  latestBioSample: SampleRecord | null;
+  lastTestedDate: string | null;
+  daysSinceLastTest: number | null;
+  monthsSinceLastTest: number | null;
+  isOverdue3Months: boolean;
+  isOverdue6Months: boolean;
+  isNeverTested: boolean;
+  overdueCategory: 'CRITICAL_NEVER' | 'OVERDUE_6M' | 'OVERDUE_3M' | 'TIMELY';
+  lastResult?: string;
+  testedThisMonth: boolean;
+  thisMonthSample?: SampleRecord;
+}
+
+export interface WaterSourceMonthlyStatusItem {
+  source: SourceMaster;
+  subcenterId: string;
+  subcenterName: string;
+  villageId: string;
+  villageName: string;
+  sourceName: string;
+  sourceCode: string;
+  sourceType: string;
+  locationAddress: string;
+  testedThisMonth: boolean;
+  thisMonthSample?: SampleRecord;
+  lastTestedDate: string | null;
+  daysSinceLastTest: number | null;
+  monthsSinceLastTest: number | null;
+  isOverdue3Months: boolean;
+  lastResult?: string;
+}
+
+export interface SubcenterMonthlyWaterPlan {
+  subcenterId: string;
+  subcenterCode: string;
+  subcenterName: string;
+  marathiName: string;
+  totalSources: number;
+  testedThisMonthCount: number;
+  pendingThisMonthCount: number;
+  overdue3MonthsCount: number;
+  coveragePercentage: number;
+  sourcesList: WaterSourceMonthlyStatusItem[];
 }
 

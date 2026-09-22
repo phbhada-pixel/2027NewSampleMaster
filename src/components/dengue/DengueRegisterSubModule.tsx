@@ -184,7 +184,7 @@ export const DengueRegisterSubModule: React.FC<DengueRegisterSubModuleProps> = (
                     </td>
                     {/* 6b. Clinical Findings */}
                     <td className="p-2 border-r border-slate-200 text-[11px]">
-                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      <div className="flex flex-wrap gap-1 max-w-[240px]">
                         {sample.feverPresent === 'Yes' && (
                           <span className="bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded text-[10px] font-medium">
                             ताप: {sample.feverDurationDays ? `${sample.feverDurationDays}d` : 'Yes'}
@@ -215,12 +215,29 @@ export const DengueRegisterSubModule: React.FC<DengueRegisterSubModuleProps> = (
                             पुरळ: {sample.rashDurationDays ? `${sample.rashDurationDays}d` : 'Yes'}
                           </span>
                         )}
-                        {(sample.hematemesisPresent === 'Yes' ||
-                          sample.epistaxisPresent === 'Yes' ||
-                          sample.melenaPresent === 'Yes' ||
-                          sample.otherHemorrhagicPresent === 'Yes') && (
+                        {sample.hematemesisPresent === 'Yes' && (
+                          <span className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                            रक्तउलटी: {sample.hematemesisDurationDays ? `${sample.hematemesisDurationDays}d` : 'Yes'}
+                          </span>
+                        )}
+                        {sample.epistaxisPresent === 'Yes' && (
+                          <span className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                            नाकातून रक्त: {sample.epistaxisDurationDays ? `${sample.epistaxisDurationDays}d` : 'Yes'}
+                          </span>
+                        )}
+                        {sample.petechiaePresent === 'Yes' && (
+                          <span className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                            त्वचेवर ठिपके: {sample.petechiaeDurationDays ? `${sample.petechiaeDurationDays}d` : 'Yes'}
+                          </span>
+                        )}
+                        {sample.melenaPresent === 'Yes' && (
+                          <span className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                            काळी विष्ठा: {sample.melenaDurationDays ? `${sample.melenaDurationDays}d` : 'Yes'}
+                          </span>
+                        )}
+                        {(sample.otherHemorrhagicPresent === 'Yes' || sample.otherHaemorrhagicPresent === 'Yes') && (
                           <span className="bg-red-200 text-red-900 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                            रक्तस्राव (Bleeding)
+                            इतर रक्तस्राव: {sample.otherHemorrhagicDurationDays || sample.otherHaemorrhagicDurationDays ? `${sample.otherHemorrhagicDurationDays || sample.otherHaemorrhagicDurationDays}d` : 'Yes'}
                           </span>
                         )}
                         {!sample.feverPresent &&
@@ -228,7 +245,11 @@ export const DengueRegisterSubModule: React.FC<DengueRegisterSubModuleProps> = (
                           !sample.bodyachePresent &&
                           !sample.jointPainPresent &&
                           !sample.retroOrbitalPainPresent &&
-                          !sample.rashPresent && (
+                          !sample.rashPresent &&
+                          !sample.hematemesisPresent &&
+                          !sample.epistaxisPresent &&
+                          !sample.petechiaePresent &&
+                          !sample.melenaPresent && (
                             <span className="text-slate-400 text-[10px]">
                               {sample.clinicalFindings?.fever && sample.clinicalFindings.fever !== '0 Days'
                                 ? `ताप: ${sample.clinicalFindings.fever}`

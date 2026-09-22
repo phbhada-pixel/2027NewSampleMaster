@@ -993,33 +993,38 @@ export const DengueDocumentationModule: React.FC<DengueDocumentationModuleProps>
                 <span className="font-bold text-slate-800 block">
                   १०. रक्तस्राव लक्षणे (Haemorrhagic Manifestations):
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={
                         editingSample.hematemesis === 'होय' ||
-                        editingSample.hematemesis === 'Yes'
+                        editingSample.hematemesis === 'Yes' ||
+                        editingSample.hematemesisPresent === 'Yes'
                       }
                       onChange={(e) =>
                         setEditingSample({
                           ...editingSample,
                           hematemesis: e.target.checked ? 'होय' : 'नाही',
+                          hematemesisPresent: e.target.checked ? 'Yes' : 'No',
                         })
                       }
                     />
-                    <span>रक्तातून उलटी</span>
+                    <span>रक्तउलटी</span>
                   </label>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={
-                        editingSample.epistaxis === 'होय' || editingSample.epistaxis === 'Yes'
+                        editingSample.epistaxis === 'होय' ||
+                        editingSample.epistaxis === 'Yes' ||
+                        editingSample.epistaxisPresent === 'Yes'
                       }
                       onChange={(e) =>
                         setEditingSample({
                           ...editingSample,
                           epistaxis: e.target.checked ? 'होय' : 'नाही',
+                          epistaxisPresent: e.target.checked ? 'Yes' : 'No',
                         })
                       }
                     />
@@ -1029,16 +1034,37 @@ export const DengueDocumentationModule: React.FC<DengueDocumentationModuleProps>
                     <input
                       type="checkbox"
                       checked={
-                        editingSample.melena === 'होय' || editingSample.melena === 'Yes'
+                        editingSample.petechiae === 'होय' ||
+                        editingSample.petechiae === 'Yes' ||
+                        editingSample.petechiaePresent === 'Yes'
+                      }
+                      onChange={(e) =>
+                        setEditingSample({
+                          ...editingSample,
+                          petechiae: e.target.checked ? 'होय' : 'नाही',
+                          petechiaePresent: e.target.checked ? 'Yes' : 'No',
+                        })
+                      }
+                    />
+                    <span>त्वचेवर ठिपके</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={
+                        editingSample.melena === 'होय' ||
+                        editingSample.melena === 'Yes' ||
+                        editingSample.melenaPresent === 'Yes'
                       }
                       onChange={(e) =>
                         setEditingSample({
                           ...editingSample,
                           melena: e.target.checked ? 'होय' : 'नाही',
+                          melenaPresent: e.target.checked ? 'Yes' : 'No',
                         })
                       }
                     />
-                    <span>काळे शौचास</span>
+                    <span>काळी विष्ठा</span>
                   </label>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
@@ -1051,6 +1077,7 @@ export const DengueDocumentationModule: React.FC<DengueDocumentationModuleProps>
                         setEditingSample({
                           ...editingSample,
                           otherHaemorrhagic: e.target.checked ? 'उपस्थित' : 'None',
+                          otherHemorrhagicPresent: e.target.checked ? 'Yes' : 'No',
                         })
                       }
                     />

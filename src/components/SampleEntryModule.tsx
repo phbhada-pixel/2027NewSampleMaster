@@ -27,17 +27,37 @@ import {
   RotateCcw,
   Sparkle,
   Layers,
+  Send,
+  CheckSquare,
+  Square,
+  Trash2,
+  ListChecks,
+  Check,
+  X,
 } from 'lucide-react';
 
 interface SampleEntryModuleProps {
   currentUser: User;
   onSampleCreated?: (sample: SampleRecord) => void;
+  onNavigate?: (tab: string, filter?: Record<string, string>) => void;
   initialSampleTypeId?: string;
+}
+
+export interface SelectedWaterSourceItem {
+  sourceId: string;
+  sourceName: string;
+  sourceType: string;
+  locationAddress: string;
+  villageId: string;
+  villageName: string;
+  subcenterId: string;
+  subcenterName: string;
 }
 
 export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
   currentUser,
   onSampleCreated,
+  onNavigate,
   initialSampleTypeId,
 }) => {
   const sampleTypes = clientStore.getSampleTypes();
@@ -59,6 +79,9 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
   // Available sources for current village + sample type
   const [availableSources, setAvailableSources] = useState<SourceMaster[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string>('');
+
+  // Multi-village water sources selection queue
+  const [selectedWaterSources, setSelectedWaterSources] = useState<SelectedWaterSourceItem[]>([]);
 
   // Form Fields State
   const [collectionDate, setCollectionDate] = useState<string>(
@@ -102,15 +125,26 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
   const [bedNo, setBedNo] = useState<string>('');
   const [natureOfSample, setNatureOfSample] = useState<'Serum' | 'Whole Blood' | 'Plasma'>('Serum');
   const [hasFever, setHasFever] = useState<boolean>(true);
+  const [feverDurationDays, setFeverDurationDays] = useState<string>('1');
   const [hasHeadache, setHasHeadache] = useState<boolean>(true);
+  const [headacheDurationDays, setHeadacheDurationDays] = useState<string>('1');
   const [hasBodyache, setHasBodyache] = useState<boolean>(true);
+  const [bodyacheDurationDays, setBodyacheDurationDays] = useState<string>('1');
   const [hasJointPain, setHasJointPain] = useState<boolean>(false);
+  const [jointPainDurationDays, setJointPainDurationDays] = useState<string>('1');
   const [hasRetroOrbitalPain, setHasRetroOrbitalPain] = useState<boolean>(false);
+  const [retroOrbitalPainDurationDays, setRetroOrbitalPainDurationDays] = useState<string>('1');
   const [hasRash, setHasRash] = useState<boolean>(false);
+  const [rashDurationDays, setRashDurationDays] = useState<string>('1');
+
   const [hasHematemesis, setHasHematemesis] = useState<boolean>(false);
+  const [hematemesisDurationDays, setHematemesisDurationDays] = useState<string>('1');
   const [hasEpistaxis, setHasEpistaxis] = useState<boolean>(false);
+  const [epistaxisDurationDays, setEpistaxisDurationDays] = useState<string>('1');
   const [hasPetechiae, setHasPetechiae] = useState<boolean>(false);
+  const [petechiaeDurationDays, setPetechiaeDurationDays] = useState<string>('1');
   const [hasMelena, setHasMelena] = useState<boolean>(false);
+  const [melenaDurationDays, setMelenaDurationDays] = useState<string>('1');
 
   // Status & Alerts
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -210,17 +244,186 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
     setBedNo('');
     setNatureOfSample('Serum');
     setHasFever(true);
+    setFeverDurationDays('1');
     setHasHeadache(true);
+    setHeadacheDurationDays('1');
     setHasBodyache(true);
+    setBodyacheDurationDays('1');
     setHasJointPain(false);
+    setJointPainDurationDays('1');
     setHasRetroOrbitalPain(false);
+    setRetroOrbitalPainDurationDays('1');
     setHasRash(false);
+    setRashDurationDays('1');
     setHasHematemesis(false);
+    setHematemesisDurationDays('1');
     setHasEpistaxis(false);
+    setEpistaxisDurationDays('1');
     setHasPetechiae(false);
+    setPetechiaeDurationDays('1');
     setHasMelena(false);
+    setMelenaDurationDays('1');
     setPatientId(`PT-${Date.now().toString().slice(-4)}`);
     setPreviewSampleId(clientStore.generateSampleId(selectedTypeId));
+  };
+
+  // Water Sources Multi-Selection Handlers (Across Multiple Villages)
+  const handleToggleWaterSource = (source: SourceMaster) => {
+    setSelectedWaterSources((prev) => {
+      const exists = prev.some((item) => item.sourceId === source.id);
+      if (exists) {
+        return prev.filter((item) => item.sourceId !== source.id);
+      } else {
+        return [
+          ...prev,
+          {
+            sourceId: source.id,
+            sourceName: source.sourceName,
+            sourceType: source.sourceType,
+            locationAddress: source.locationAddress,
+            villageId: currentVillage.id,
+            villageName: currentVillage.name,
+            subcenterId: currentVillage.subcenterId,
+            subcenterName: currentVillage.subcenterName || currentVillage.subcenter || 'भादा',
+          },
+        ];
+      }
+    });
+  };
+
+  const handleSelectAllVillageSources = () => {
+    if (availableSources.length === 0) return;
+    setSelectedWaterSources((prev) => {
+      const existingIds = new Set(prev.map((item) => item.sourceId));
+      const newItems: SelectedWaterSourceItem[] = availableSources
+        .filter((s) => !existingIds.has(s.id))
+        .map((s) => ({
+          sourceId: s.id,
+          sourceName: s.sourceName,
+          sourceType: s.sourceType,
+          locationAddress: s.locationAddress,
+          villageId: currentVillage.id,
+          villageName: currentVillage.name,
+          subcenterId: currentVillage.subcenterId,
+          subcenterName: currentVillage.subcenterName || currentVillage.subcenter || 'भादा',
+        }));
+      return [...prev, ...newItems];
+    });
+  };
+
+  const handleDeselectVillageSources = () => {
+    const curVillageSourceIds = new Set(availableSources.map((s) => s.id));
+    setSelectedWaterSources((prev) => prev.filter((item) => !curVillageSourceIds.has(item.sourceId)));
+  };
+
+  const handleRemoveSelectedSource = (sourceId: string) => {
+    setSelectedWaterSources((prev) => prev.filter((item) => item.sourceId !== sourceId));
+  };
+
+  const handleClearAllSelectedWaterSources = () => {
+    setSelectedWaterSources([]);
+  };
+
+  // Batch Save & Send for Water Samples across all selected villages
+  const handleSaveWaterSamplesBatch = (sendForTesting: boolean = false) => {
+    if (isSubmitting) return;
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    // Determine target sources: either selected in multi-queue or currently active single source
+    const targets: SelectedWaterSourceItem[] =
+      selectedWaterSources.length > 0
+        ? selectedWaterSources
+        : selectedSourceId && availableSources.find((s) => s.id === selectedSourceId)
+        ? [
+            {
+              sourceId: selectedSourceId,
+              sourceName: availableSources.find((s) => s.id === selectedSourceId)!.sourceName,
+              sourceType: availableSources.find((s) => s.id === selectedSourceId)!.sourceType,
+              locationAddress: availableSources.find((s) => s.id === selectedSourceId)!.locationAddress,
+              villageId: currentVillage.id,
+              villageName: currentVillage.name,
+              subcenterId: currentVillage.subcenterId,
+              subcenterName: currentVillage.subcenterName || currentVillage.subcenter || 'भादा',
+            },
+          ]
+        : [];
+
+    if (targets.length === 0) {
+      setErrorMessage('कृपया किमान एका पाणी स्त्रोताची निवड करा.');
+      return;
+    }
+
+    if (!collectionDate) {
+      setErrorMessage('कृपया नमुना संकलन दिनांक भरा.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const createdSamples: SampleRecord[] = [];
+
+    try {
+      let startSeq = parseInt(sampleCodeOrBottleNo.trim(), 10);
+      if (isNaN(startSeq) || startSeq <= 0) {
+        startSeq = parseInt(clientStore.getNextBottleNumber(collectionDate, selectedTypeId), 10) || 1;
+      }
+
+      targets.forEach((srcItem, index) => {
+        const bottleNo = String(startSeq + index);
+        const samplePayload: Omit<
+          SampleRecord,
+          'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'createdByName' | 'isActive'
+        > = {
+          sampleTypeId: selectedTypeId,
+          sampleTypeName: currentSampleType.name,
+          collectionDate,
+          dispatchDate,
+          villageId: srcItem.villageId,
+          villageName: srcItem.villageName,
+          subcenterId: srcItem.subcenterId,
+          subcenterName: srcItem.subcenterName,
+          subcenter: srcItem.subcenterName,
+          phcName: 'भादा',
+          taluka: 'औसा',
+          district: 'लातूर',
+          laboratoryName,
+          remarks: remarks || 'पाणी नमुना संकलन',
+          status: 'Collected',
+          sourceId: srcItem.sourceId,
+          sourceName: srcItem.sourceName,
+          sourceType: srcItem.sourceType,
+          sampleCollector,
+          sampleQuantity,
+          sampleCodeOrBottleNo: bottleNo,
+        };
+
+        const saved = clientStore.addSample(samplePayload);
+        createdSamples.push(saved);
+        if (onSampleCreated) {
+          onSampleCreated(saved);
+        }
+      });
+
+      const count = createdSamples.length;
+      setSelectedWaterSources([]);
+
+      if (sendForTesting) {
+        setSuccessMessage(`एकूण ${count} पाणी नमुने यशस्वीरित्या नोंदविले गेले आहेत. आता जावक पत्र तयार करण्यासाठी पाठवत आहोत...`);
+        if (onNavigate) {
+          setTimeout(() => {
+            onNavigate('sending-letters', { sampleTypeId: selectedTypeId });
+          }, 600);
+        }
+      } else {
+        setSuccessMessage(`एकूण ${count} पाणी नमुने यशस्वीरित्या नोंदविले गेले आहेत!`);
+        resetForm();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'नमुने जतन करताना त्रुटी आली.';
+      setErrorMessage(`नमुना नोंदणी पूर्ण झाली नाही: ${msg}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSaveSample = (saveAndNew = false) => {
@@ -351,13 +554,65 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
                     wardNo,
                     bedNo,
                     natureOfSample,
+                    feverPresent: hasFever ? 'Yes' : 'No',
+                    feverDurationDays: hasFever ? Number(feverDurationDays) || 1 : null,
+                    fever: hasFever ? 'होय' : 'नाही',
+                    feverDuration: hasFever ? `${Number(feverDurationDays) || 1} Days` : undefined,
+
+                    headachePresent: hasHeadache ? 'Yes' : 'No',
+                    headacheDurationDays: hasHeadache ? Number(headacheDurationDays) || 1 : null,
+                    headache: hasHeadache ? 'होय' : 'नाही',
+                    headacheDuration: hasHeadache ? `${Number(headacheDurationDays) || 1} Days` : undefined,
+
+                    bodyachePresent: hasBodyache ? 'Yes' : 'No',
+                    bodyacheDurationDays: hasBodyache ? Number(bodyacheDurationDays) || 1 : null,
+                    bodyache: hasBodyache ? 'होय' : 'नाही',
+                    bodyacheDuration: hasBodyache ? `${Number(bodyacheDurationDays) || 1} Days` : undefined,
+
+                    jointPainPresent: hasJointPain ? 'Yes' : 'No',
+                    jointPainDurationDays: hasJointPain ? Number(jointPainDurationDays) || 1 : null,
+                    jointPain: hasJointPain ? 'होय' : 'नाही',
+                    jointPainDuration: hasJointPain ? `${Number(jointPainDurationDays) || 1} Days` : undefined,
+
+                    retroOrbitalPainPresent: hasRetroOrbitalPain ? 'Yes' : 'No',
+                    retroOrbitalPainDurationDays: hasRetroOrbitalPain ? Number(retroOrbitalPainDurationDays) || 1 : null,
+                    retroOrbitalPain: hasRetroOrbitalPain ? 'होय' : 'नाही',
+                    retroOrbitalPainDuration: hasRetroOrbitalPain ? `${Number(retroOrbitalPainDurationDays) || 1} Days` : undefined,
+
+                    rashPresent: hasRash ? 'Yes' : 'No',
+                    rashDurationDays: hasRash ? Number(rashDurationDays) || 1 : null,
+                    rash: hasRash ? 'होय' : 'नाही',
+                    rashDuration: hasRash ? `${Number(rashDurationDays) || 1} Days` : undefined,
+
+                    haemorrhagicManifestation: (hasHematemesis || hasEpistaxis || hasPetechiae || hasMelena) ? 'होय' : 'नाही',
+
+                    hematemesisPresent: hasHematemesis ? 'Yes' : 'No',
+                    hematemesisDurationDays: hasHematemesis ? Number(hematemesisDurationDays) || 1 : null,
+                    hematemesis: hasHematemesis ? 'होय' : 'नाही',
+                    hematemesisDuration: hasHematemesis ? `${Number(hematemesisDurationDays) || 1} Days` : undefined,
+
+                    epistaxisPresent: hasEpistaxis ? 'Yes' : 'No',
+                    epistaxisDurationDays: hasEpistaxis ? Number(epistaxisDurationDays) || 1 : null,
+                    epistaxis: hasEpistaxis ? 'होय' : 'नाही',
+                    epistaxisDuration: hasEpistaxis ? `${Number(epistaxisDurationDays) || 1} Days` : undefined,
+
+                    petechiaePresent: hasPetechiae ? 'Yes' : 'No',
+                    petechiaeDurationDays: hasPetechiae ? Number(petechiaeDurationDays) || 1 : null,
+                    petechiae: hasPetechiae ? 'होय' : 'नाही',
+                    petechiaeDuration: hasPetechiae ? `${Number(petechiaeDurationDays) || 1} Days` : undefined,
+
+                    melenaPresent: hasMelena ? 'Yes' : 'No',
+                    melenaDurationDays: hasMelena ? Number(melenaDurationDays) || 1 : null,
+                    melena: hasMelena ? 'होय' : 'नाही',
+                    melenaDuration: hasMelena ? `${Number(melenaDurationDays) || 1} Days` : undefined,
+
                     clinicalFindings: {
-                      fever: hasFever,
-                      headache: hasHeadache,
-                      bodyache: hasBodyache,
-                      jointPain: hasJointPain,
-                      retroOrbitalPain: hasRetroOrbitalPain,
-                      rash: hasRash,
+                      fever: hasFever ? `${Number(feverDurationDays) || 1} Days` : '0 Days',
+                      headache: hasHeadache ? `${Number(headacheDurationDays) || 1} Days` : '0 Days',
+                      bodyache: hasBodyache ? `${Number(bodyacheDurationDays) || 1} Days` : '0 Days',
+                      jointPain: hasJointPain ? `${Number(jointPainDurationDays) || 1} Days` : '0 Days',
+                      retroOrbitalPain: hasRetroOrbitalPain ? `${Number(retroOrbitalPainDurationDays) || 1} Days` : '0 Days',
+                      rash: hasRash ? `${Number(rashDurationDays) || 1} Days` : '0 Days',
                     },
                     haemorrhagicManifestations: {
                       hematemesis: hasHematemesis,
@@ -660,72 +915,200 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
         {/* ---------------------------------------------------- */}
         {isWater && (
           <div className="bg-cyan-50/50 border border-cyan-200/80 rounded-xl p-4 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-cyan-200/60 pb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-cyan-200/60 pb-2.5">
               <div className="text-xs font-bold text-cyan-950 flex items-center gap-1.5">
                 <Droplets className="w-4 h-4 text-cyan-700" />
-                गाव निहाय पाणी स्त्रोत तपशील ({currentVillage.name}):
+                <span>
+                  गाव निहाय सर्व पाणी स्त्रोत ({currentVillage.name}) —{' '}
+                  <span className="text-cyan-800 font-extrabold">{availableSources.length} स्त्रोत उपलब्ध</span>
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowAddSourceModal(true)}
-                className="flex items-center gap-1.5 bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm self-start sm:self-center transition-all"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>नवीन स्त्रोत जोडा (Add Source)</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Source Dropdown */}
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-800 mb-1">
-                  पाणी स्त्रोत निवडा (Source)*:
-                </label>
-                {availableSources.length === 0 ? (
-                  <div className="text-xs text-rose-700 bg-rose-50 p-2.5 rounded border border-rose-200 flex items-center justify-between">
-                    <span>या गावात अद्याप कोणताही स्त्रोत नोंदवलेला नाही.</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {availableSources.length > 0 && (
+                  <>
                     <button
                       type="button"
-                      onClick={() => setShowAddSourceModal(true)}
-                      className="underline font-bold text-xs"
+                      onClick={handleSelectAllVillageSources}
+                      className="flex items-center gap-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-900 border border-cyan-300 text-[11px] font-bold px-2.5 py-1 rounded-md shadow-2xs transition-colors"
                     >
-                      आता जोडा +
+                      <CheckSquare className="w-3.5 h-3.5 text-cyan-700" />
+                      <span>सर्व स्त्रोत निवडा</span>
                     </button>
-                  </div>
-                ) : (
-                  <select
-                    value={selectedSourceId}
-                    onChange={(e) => setSelectedSourceId(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-cyan-600 focus:outline-none"
-                  >
-                    {availableSources.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.sourceName} — [{s.sourceType}] ({s.locationAddress})
-                      </option>
-                    ))}
-                  </select>
+                    <button
+                      type="button"
+                      onClick={handleDeselectVillageSources}
+                      className="flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[11px] font-semibold px-2.5 py-1 rounded-md transition-colors"
+                    >
+                      <Square className="w-3.5 h-3.5 text-slate-500" />
+                      <span>निवड रद्द करा</span>
+                    </button>
+                  </>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setShowAddSourceModal(true)}
+                  className="flex items-center gap-1.5 bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm transition-all"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>नवीन स्त्रोत जोडा</span>
+                </button>
               </div>
+            </div>
 
-              {/* Sample Bottle No */}
+            {/* Display All Sources of Current Village as Interactive Multi-Select Cards */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-2">
+                पाणी स्त्रोत निवडा (Multiple Sources Selection)*:
+              </label>
+              {availableSources.length === 0 ? (
+                <div className="text-xs text-rose-700 bg-rose-50 p-3 rounded-lg border border-rose-200 flex items-center justify-between">
+                  <span>या गावात अद्याप कोणताही पाणी स्त्रोत नोंदवलेला नाही.</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddSourceModal(true)}
+                    className="underline font-bold text-xs hover:text-rose-900"
+                  >
+                    आता नवीन स्त्रोत जोडा +
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {availableSources.map((s) => {
+                    const isSelected = selectedWaterSources.some((item) => item.sourceId === s.id);
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => handleToggleWaterSource(s)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start justify-between gap-2.5 select-none ${
+                          isSelected
+                            ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 shadow-2xs'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                          <button
+                            type="button"
+                            className="mt-0.5 text-emerald-700 focus:outline-none flex-shrink-0"
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-emerald-700 fill-emerald-100" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-xs text-slate-900 truncate">
+                              {s.sourceName}
+                            </div>
+                            <div className="text-[11px] text-slate-500 truncate">
+                              {s.locationAddress || currentVillage.name}
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded flex-shrink-0 ${
+                            isSelected
+                              ? 'bg-emerald-200/70 text-emerald-900'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {s.sourceType}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Multi-Village Selected Sources Staging / Queue Box */}
+            {selectedWaterSources.length > 0 && (
+              <div className="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3.5 space-y-2.5 animate-in fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200 pb-2">
+                  <div className="flex items-center gap-2">
+                    <ListChecks className="w-4 h-4 text-emerald-800" />
+                    <span className="text-xs font-bold text-emerald-950">
+                      निवडलेले सर्व पाणी स्त्रोत: {selectedWaterSources.length}
+                    </span>
+                    <span className="text-[11px] text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-300 font-semibold">
+                      {Array.from(new Set(selectedWaterSources.map((item) => item.villageName))).length} गावे समाविष्ट
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearAllSelectedWaterSources}
+                    className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline self-start sm:self-center"
+                  >
+                    सर्व गावांतील निवड रद्द करा
+                  </button>
+                </div>
+
+                {/* Village Badges Breakdown */}
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from(new Set(selectedWaterSources.map((item) => item.villageName))).map((vilName) => {
+                    const count = selectedWaterSources.filter((item) => item.villageName === vilName).length;
+                    return (
+                      <span
+                        key={vilName}
+                        className="bg-white border border-emerald-300 text-emerald-900 text-[11px] font-bold px-2.5 py-0.5 rounded-md shadow-2xs flex items-center gap-1.5"
+                      >
+                        <span>{vilName}:</span>
+                        <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-black text-[10px]">
+                          {count}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {/* Detailed Selected Sources Chips with Remove Option */}
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                  {selectedWaterSources.map((item) => (
+                    <div
+                      key={item.sourceId}
+                      className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 flex items-center gap-2 shadow-2xs group"
+                    >
+                      <span className="font-semibold text-slate-900">{item.sourceName}</span>
+                      <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-1 rounded">
+                        {item.villageName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSelectedSource(item.sourceId)}
+                        className="text-slate-400 hover:text-rose-600 font-bold text-xs"
+                        title="काढा"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Collection Metadata for Water */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+              {/* Sample Bottle No Note */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-slate-800">
-                    बाटली क्रमांक / कोड (Bottle No)*:
+                    बाटली क्रमांक / अनुक्रमांक (Serial No)*:
                   </label>
                   <span className="text-[10px] font-bold bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded border border-cyan-200">
-                    दिनांकनिहाय स्वयंचलित (Auto)
+                    अनुक्रमांक स्वयंचलित (1, 2, 3...)
                   </span>
                 </div>
                 <input
                   type="text"
-                  placeholder="उदा. Bottle No. 1"
+                  placeholder="उदा. 1, 2, 3..."
                   value={sampleCodeOrBottleNo}
                   onChange={(e) => setSampleCodeOrBottleNo(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-cyan-950 focus:bg-white focus:ring-2 focus:ring-cyan-600 focus:outline-none"
                 />
                 <p className="text-[10px] text-slate-500 mt-1">
-                  सदर संकलन दिनांकासाठी अनुक्रमांक १ पासून स्वयंचलित सुरू होते. जुना नोंद क्रमांक असल्यास बदलू शकता.
+                  {selectedWaterSources.length > 1
+                    ? `निवडलेल्या सर्व ${selectedWaterSources.length} स्त्रोतांना आपोआप पुढील अनुक्रमांक दिले जातील.`
+                    : 'सदर संकलन दिनांकासाठी अनुक्रमांक १ पासून (1, 2, 3...) स्वयंचलित सुरू होते.'}
                 </p>
               </div>
 
@@ -751,19 +1134,6 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
                   type="text"
                   value={sampleQuantity}
                   onChange={(e) => setSampleQuantity(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-cyan-600 focus:outline-none"
-                />
-              </div>
-
-              {/* Lab */}
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">
-                  तपासणी प्रयोगशाळा (Laboratory):
-                </label>
-                <input
-                  type="text"
-                  value={laboratoryName}
-                  onChange={(e) => setLaboratoryName(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-cyan-600 focus:outline-none"
                 />
               </div>
@@ -1144,104 +1514,312 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
                 {/* Clinical Findings Checkboxes */}
                 <div className="bg-white p-3 rounded-lg border border-purple-100 space-y-2">
                   <div className="text-xs font-bold text-slate-800">क्लिनिकल लक्षणे (Clinical Findings):</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasFever}
-                        onChange={(e) => setHasFever(e.target.checked)}
-                        className="rounded text-purple-600"
-                      />
-                      <span>ताप (Fever)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasHeadache}
-                        onChange={(e) => setHasHeadache(e.target.checked)}
-                        className="rounded text-purple-600"
-                      />
-                      <span>डोकेदुखी (Headache)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasBodyache}
-                        onChange={(e) => setHasBodyache(e.target.checked)}
-                        className="rounded text-purple-600"
-                      />
-                      <span>अंगदुखी (Bodyache)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasJointPain}
-                        onChange={(e) => setHasJointPain(e.target.checked)}
-                        className="rounded text-purple-600"
-                      />
-                      <span>सांधेदुखी (Joint Pain)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasRetroOrbitalPain}
-                        onChange={(e) => setHasRetroOrbitalPain(e.target.checked)}
-                        className="rounded text-purple-600"
-                      />
-                      <span>डोळ्यांमागे दुखणे</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasRash}
-                        onChange={(e) => setHasRash(e.target.checked)}
-                        className="rounded text-purple-600"
-                      />
-                      <span>पुरळ (Rash)</span>
-                    </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                    {/* Fever */}
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasFever}
+                            onChange={(e) => setHasFever(e.target.checked)}
+                            className="rounded text-purple-600"
+                          />
+                          <span>ताप (Fever)</span>
+                        </label>
+                      </div>
+                      {hasFever && (
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={feverDurationDays}
+                              onChange={(e) => setFeverDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-purple-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Headache */}
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasHeadache}
+                            onChange={(e) => setHasHeadache(e.target.checked)}
+                            className="rounded text-purple-600"
+                          />
+                          <span>डोकेदुखी (Headache)</span>
+                        </label>
+                      </div>
+                      {hasHeadache && (
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={headacheDurationDays}
+                              onChange={(e) => setHeadacheDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-purple-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bodyache */}
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasBodyache}
+                            onChange={(e) => setHasBodyache(e.target.checked)}
+                            className="rounded text-purple-600"
+                          />
+                          <span>अंगदुखी (Bodyache)</span>
+                        </label>
+                      </div>
+                      {hasBodyache && (
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={bodyacheDurationDays}
+                              onChange={(e) => setBodyacheDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-purple-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Joint Pain */}
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasJointPain}
+                            onChange={(e) => setHasJointPain(e.target.checked)}
+                            className="rounded text-purple-600"
+                          />
+                          <span>सांधेदुखी (Joint Pain)</span>
+                        </label>
+                      </div>
+                      {hasJointPain && (
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={jointPainDurationDays}
+                              onChange={(e) => setJointPainDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-purple-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Retro-orbital Pain */}
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasRetroOrbitalPain}
+                            onChange={(e) => setHasRetroOrbitalPain(e.target.checked)}
+                            className="rounded text-purple-600"
+                          />
+                          <span>डोळ्यांमागे दुखणे</span>
+                        </label>
+                      </div>
+                      {hasRetroOrbitalPain && (
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={retroOrbitalPainDurationDays}
+                              onChange={(e) => setRetroOrbitalPainDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-purple-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rash */}
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasRash}
+                            onChange={(e) => setHasRash(e.target.checked)}
+                            className="rounded text-purple-600"
+                          />
+                          <span>पुरळ (Rash)</span>
+                        </label>
+                      </div>
+                      {hasRash && (
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={rashDurationDays}
+                              onChange={(e) => setRashDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-purple-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Haemorrhagic Manifestations */}
                 <div className="bg-white p-3 rounded-lg border border-purple-100 space-y-2">
                   <div className="text-xs font-bold text-slate-800">रक्तस्त्राव लक्षणे (Haemorrhagic Manifestations):</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasHematemesis}
-                        onChange={(e) => setHasHematemesis(e.target.checked)}
-                        className="rounded text-rose-600"
-                      />
-                      <span>रक्तउलटी (Hematemesis)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasEpistaxis}
-                        onChange={(e) => setHasEpistaxis(e.target.checked)}
-                        className="rounded text-rose-600"
-                      />
-                      <span>नाकातून रक्त (Epistaxis)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasPetechiae}
-                        onChange={(e) => setHasPetechiae(e.target.checked)}
-                        className="rounded text-rose-600"
-                      />
-                      <span>त्वचेवर ठिपके (Petechiae)</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasMelena}
-                        onChange={(e) => setHasMelena(e.target.checked)}
-                        className="rounded text-rose-600"
-                      />
-                      <span>काळी विष्ठा (Melena)</span>
-                    </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+                    {/* Hematemesis */}
+                    <div className="p-2 bg-rose-50/50 rounded border border-rose-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasHematemesis}
+                            onChange={(e) => setHasHematemesis(e.target.checked)}
+                            className="rounded text-rose-600"
+                          />
+                          <span>रक्तउलटी (Hematemesis)</span>
+                        </label>
+                      </div>
+                      {hasHematemesis && (
+                        <div className="mt-1.5 pt-1.5 border-t border-rose-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={hematemesisDurationDays}
+                              onChange={(e) => setHematemesisDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-rose-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Epistaxis */}
+                    <div className="p-2 bg-rose-50/50 rounded border border-rose-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasEpistaxis}
+                            onChange={(e) => setHasEpistaxis(e.target.checked)}
+                            className="rounded text-rose-600"
+                          />
+                          <span>नाकातून रक्त (Epistaxis)</span>
+                        </label>
+                      </div>
+                      {hasEpistaxis && (
+                        <div className="mt-1.5 pt-1.5 border-t border-rose-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={epistaxisDurationDays}
+                              onChange={(e) => setEpistaxisDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-rose-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Petechiae */}
+                    <div className="p-2 bg-rose-50/50 rounded border border-rose-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasPetechiae}
+                            onChange={(e) => setHasPetechiae(e.target.checked)}
+                            className="rounded text-rose-600"
+                          />
+                          <span>त्वचेवर ठिपके (Petechiae)</span>
+                        </label>
+                      </div>
+                      {hasPetechiae && (
+                        <div className="mt-1.5 pt-1.5 border-t border-rose-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={petechiaeDurationDays}
+                              onChange={(e) => setPetechiaeDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-rose-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Melena */}
+                    <div className="p-2 bg-rose-50/50 rounded border border-rose-200">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasMelena}
+                            onChange={(e) => setHasMelena(e.target.checked)}
+                            className="rounded text-rose-600"
+                          />
+                          <span>काळी विष्ठा (Melena)</span>
+                        </label>
+                      </div>
+                      {hasMelena && (
+                        <div className="mt-1.5 pt-1.5 border-t border-rose-200 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 font-medium">कालावधी:</span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              value={melenaDurationDays}
+                              onChange={(e) => setMelenaDurationDays(e.target.value.replace(/[^0-9]/g, ''))}
+                              className="w-14 bg-white border border-rose-300 rounded px-1.5 py-0.5 text-xs text-center font-bold"
+                            />
+                            <span className="text-slate-600">दिवस</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1274,26 +1852,57 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
             <span>फॉर्म साफ करा (Reset)</span>
           </button>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => handleSaveSample(true)}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed text-emerald-900 px-4 py-2.5 rounded-lg text-xs font-bold border border-emerald-300 transition-all active:scale-95"
-            >
-              <Save className="w-4 h-4 text-emerald-700" />
-              <span>{isSubmitting ? 'जतन होत आहे...' : 'जतन करा व नवीन जोडा (Save & New)'}</span>
-            </button>
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => handleSaveSample(false)}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-emerald-800 hover:bg-emerald-900 disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg text-xs font-bold shadow-md transition-all active:scale-95"
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-              <span>{isSubmitting ? 'जतन होत आहे...' : 'नमुना जतन करा (Save Sample)'}</span>
-            </button>
-          </div>
+          {isWater ? (
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => handleSaveWaterSamplesBatch(false)}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed text-emerald-900 px-4 py-2.5 rounded-lg text-xs font-bold border border-emerald-300 transition-all active:scale-95"
+              >
+                <Save className="w-4 h-4 text-emerald-700" />
+                <span>
+                  {isSubmitting
+                    ? 'जतन होत आहे...'
+                    : `केवळ नमुने जतन करा (${selectedWaterSources.length > 0 ? selectedWaterSources.length : 1})`}
+                </span>
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => handleSaveWaterSamplesBatch(true)}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-emerald-800 hover:bg-emerald-900 disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg text-xs font-bold shadow-md transition-all active:scale-95"
+              >
+                <Send className="w-4 h-4 text-emerald-300" />
+                <span>
+                  {isSubmitting
+                    ? 'पाठवत आहे...'
+                    : `तपासणीसाठी पाठवा (${selectedWaterSources.length > 0 ? selectedWaterSources.length : 1} नमुने)`}
+                </span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => handleSaveSample(true)}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed text-emerald-900 px-4 py-2.5 rounded-lg text-xs font-bold border border-emerald-300 transition-all active:scale-95"
+              >
+                <Save className="w-4 h-4 text-emerald-700" />
+                <span>{isSubmitting ? 'जतन होत आहे...' : 'जतन करा व नवीन जोडा (Save & New)'}</span>
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => handleSaveSample(false)}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-emerald-800 hover:bg-emerald-900 disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg text-xs font-bold shadow-md transition-all active:scale-95"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>{isSubmitting ? 'जतन होत आहे...' : 'नमुना जतन करा (Save Sample)'}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
