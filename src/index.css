@@ -1,1 +1,48 @@
 @import "tailwindcss";
+
+@layer utilities {
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm 15mm 15mm;
+    }
+
+    body {
+      background: white !important;
+      color: black !important;
+      font-size: 11pt;
+      line-height: 1.4;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    nav,
+    header,
+    footer,
+    aside,
+    button,
+    .print\:hidden,
+    #root > div > nav {
+      display: none !important;
+    }
+
+    .a4-print-page {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .a4-print-page:last-child {
+      page-break-after: auto !important;
+      break-after: auto !important;
+    }
+  }
+}

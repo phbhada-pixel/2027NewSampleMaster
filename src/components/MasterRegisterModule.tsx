@@ -1020,28 +1020,108 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
                   </div>
                 </div>
 
-                {viewingSample.clinicalFindings && (
+                {(viewingSample.feverPresent === 'Yes' ||
+                  viewingSample.headachePresent === 'Yes' ||
+                  viewingSample.bodyachePresent === 'Yes' ||
+                  viewingSample.jointPainPresent === 'Yes' ||
+                  viewingSample.retroOrbitalPainPresent === 'Yes' ||
+                  viewingSample.rashPresent === 'Yes' ||
+                  viewingSample.clinicalFindings) && (
                   <div className="bg-white p-2 rounded border border-purple-100">
-                    <span className="text-slate-500 block text-[10px] mb-1">क्लिनिकल लक्षणे:</span>
+                    <span className="text-slate-500 block text-[10px] mb-1 font-semibold">क्लिनिकल लक्षणे (कालावधीसह):</span>
                     <div className="flex flex-wrap gap-1.5">
-                      {viewingSample.clinicalFindings.fever && <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">ताप (Fever)</span>}
-                      {viewingSample.clinicalFindings.headache && <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">डोकेदुखी (Headache)</span>}
-                      {viewingSample.clinicalFindings.bodyache && <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">अंगदुखी (Bodyache)</span>}
-                      {viewingSample.clinicalFindings.jointPain && <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">सांधेदुखी (Joint Pain)</span>}
-                      {viewingSample.clinicalFindings.retroOrbitalPain && <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">डोळ्यांमागे दुखणे</span>}
-                      {viewingSample.clinicalFindings.rash && <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">पुरळ (Rash)</span>}
+                      {viewingSample.feverPresent === 'Yes' ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          ताप: {viewingSample.feverDurationDays ? `${viewingSample.feverDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.clinicalFindings?.fever ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">ताप (Fever)</span>
+                      ) : null}
+
+                      {viewingSample.headachePresent === 'Yes' ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          डोकेदुखी: {viewingSample.headacheDurationDays ? `${viewingSample.headacheDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.clinicalFindings?.headache ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">डोकेदुखी (Headache)</span>
+                      ) : null}
+
+                      {viewingSample.bodyachePresent === 'Yes' ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          अंगदुखी: {viewingSample.bodyacheDurationDays ? `${viewingSample.bodyacheDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.clinicalFindings?.bodyache ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">अंगदुखी (Bodyache)</span>
+                      ) : null}
+
+                      {viewingSample.jointPainPresent === 'Yes' ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          सांधेदुखी: {viewingSample.jointPainDurationDays ? `${viewingSample.jointPainDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.clinicalFindings?.jointPain ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">सांधेदुखी (Joint Pain)</span>
+                      ) : null}
+
+                      {viewingSample.retroOrbitalPainPresent === 'Yes' ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          डोळ्यांमागे: {viewingSample.retroOrbitalPainDurationDays ? `${viewingSample.retroOrbitalPainDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.clinicalFindings?.retroOrbitalPain ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">डोळ्यांमागे दुखणे</span>
+                      ) : null}
+
+                      {viewingSample.rashPresent === 'Yes' ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          पुरळ: {viewingSample.rashDurationDays ? `${viewingSample.rashDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.clinicalFindings?.rash ? (
+                        <span className="bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">पुरळ (Rash)</span>
+                      ) : null}
                     </div>
                   </div>
                 )}
 
-                {viewingSample.haemorrhagicManifestations && (
+                {(viewingSample.hematemesisPresent === 'Yes' ||
+                  viewingSample.epistaxisPresent === 'Yes' ||
+                  viewingSample.melenaPresent === 'Yes' ||
+                  viewingSample.otherHemorrhagicPresent === 'Yes' ||
+                  viewingSample.haemorrhagicManifestations) && (
                   <div className="bg-white p-2 rounded border border-rose-100">
-                    <span className="text-slate-500 block text-[10px] mb-1">रक्तस्त्राव लक्षणे:</span>
+                    <span className="text-slate-500 block text-[10px] mb-1 font-semibold">रक्तस्त्राव लक्षणे (कालावधीसह):</span>
                     <div className="flex flex-wrap gap-1.5">
-                      {viewingSample.haemorrhagicManifestations.hematemesis && <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">रक्तउलटी</span>}
-                      {viewingSample.haemorrhagicManifestations.epistaxis && <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">नाकातून रक्त</span>}
-                      {viewingSample.haemorrhagicManifestations.petechiae && <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">ठिपके (Petechiae)</span>}
-                      {viewingSample.haemorrhagicManifestations.melena && <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">काळी विष्ठा (Melena)</span>}
+                      {viewingSample.hematemesisPresent === 'Yes' ? (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          रक्तउलटी: {viewingSample.hematemesisDurationDays ? `${viewingSample.hematemesisDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.haemorrhagicManifestations?.hematemesis ? (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">रक्तउलटी</span>
+                      ) : null}
+
+                      {viewingSample.epistaxisPresent === 'Yes' ? (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          नाकातून रक्त: {viewingSample.epistaxisDurationDays ? `${viewingSample.epistaxisDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.haemorrhagicManifestations?.epistaxis ? (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">नाकातून रक्त</span>
+                      ) : null}
+
+                      {viewingSample.melenaPresent === 'Yes' ? (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          काळी विष्ठा: {viewingSample.melenaDurationDays ? `${viewingSample.melenaDurationDays} दिवस` : 'होय'}
+                        </span>
+                      ) : viewingSample.haemorrhagicManifestations?.melena ? (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">काळी विष्ठा (Melena)</span>
+                      ) : null}
+
+                      {(viewingSample.otherHemorrhagicPresent === 'Yes' || viewingSample.otherHaemorrhagicPresent === 'Yes') && (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                          इतर: {viewingSample.otherHemorrhagicDescription || 'होय'} ({viewingSample.otherHemorrhagicDurationDays || 1} दिवस)
+                        </span>
+                      )}
+
+                      {viewingSample.haemorrhagicManifestations?.petechiae && (
+                        <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-semibold">ठिपके (Petechiae)</span>
+                      )}
                     </div>
                   </div>
                 )}

@@ -97,6 +97,7 @@ export interface SampleRecord {
   dispatchDate?: string; // YYYY-MM-DD
   sendingDate?: string; // YYYY-MM-DD (Official sending letter date)
   reportReceivedDate?: string; // YYYY-MM-DD
+  reportDate?: string; // YYYY-MM-DD (Alias for reportReceivedDate)
   reportUpdateDate?: string; // YYYY-MM-DD
   
   // Location (Authoritative Hierarchy: PHC -> Subcenter -> Village -> Source)
@@ -143,6 +144,7 @@ export interface SampleRecord {
   symptomOnsetDate?: string; // Alias for Date Of Onset of First Symptom
   natureOfSample?: 'Serum' | 'Blood' | 'CSF' | string; // Nature of sample
   testRequested?: 'डेंग्यू (NS1/IgM)' | 'चिकनगुनिया (IgM)' | 'डेंग्यू व चिकनगुनिया' | 'गोवर (Measles IgM)' | string;
+  testType?: string; // e.g. 'Dengue NS1 Antigen ELISA'
   
   // Dengue / Chikungunya Clinical Findings (NIV Pune Format)
   clinicalFindings?: {
@@ -166,6 +168,20 @@ export interface SampleRecord {
   retroOrbitalPainDuration?: string;
   rash?: string;
   rashDuration?: string;
+
+  // Dedicated Three-Logical-Value Clinical Findings
+  feverPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  feverDurationDays?: number | null;
+  headachePresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  headacheDurationDays?: number | null;
+  bodyachePresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  bodyacheDurationDays?: number | null;
+  jointPainPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  jointPainDurationDays?: number | null;
+  retroOrbitalPainPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  retroOrbitalPainDurationDays?: number | null;
+  rashPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  rashDurationDays?: number | null;
   
   // Haemorrhagic Manifestations
   haemorrhagicManifestations?: {
@@ -181,6 +197,18 @@ export interface SampleRecord {
   epistaxis?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
   melena?: string; // 'नाही' | 'होय' | 'No' | 'Yes'
   otherHaemorrhagic?: string; // Details if other
+  hematemesisPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  hematemesisDurationDays?: number | null;
+  epistaxisPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  epistaxisDurationDays?: number | null;
+  melenaPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  melenaDurationDays?: number | null;
+  otherHemorrhagicPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  otherHemorrhagicDescription?: string;
+  otherHemorrhagicDurationDays?: number | null;
+  otherHaemorrhagicPresent?: boolean | 'Yes' | 'No' | 'होय' | 'नाही';
+  otherHaemorrhagicDescription?: string;
+  otherHaemorrhagicDurationDays?: number | null;
   medicalOfficerName?: string; // e.g. 'Dr. Patil S.S.'
   medicalOfficerMobile?: string; // e.g. '9689686901'
   
