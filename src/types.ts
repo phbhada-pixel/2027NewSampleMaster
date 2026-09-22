@@ -117,6 +117,7 @@ export interface SampleRecord {
   sampleCollector?: string;
   sampleQuantity?: string; // e.g. '250 ml', '1 Litre', '100 gm'
   sampleCodeOrBottleNo?: string; // e.g. 'BTL-101'
+  bottleNumber?: string | number; // Date-wise bottle sequence number e.g. 1, 2, 'BTL-1'
   
   // Salt / TCL specific (if applicable)
   shopOrInstitutionName?: string;
@@ -280,6 +281,8 @@ export interface SendingLetter {
   signatoryMobile?: string; // e.g. '9689686901'
   recipientName?: string; // e.g. 'प्रयोगशाळा अधिकारी, शासकीय वैद्यकीय महाविद्यालय (GMC), लातूर'
   status?: 'Draft' | 'Generated' | 'Dispatched' | 'Report Received';
+  dispatchStatus?: string;
+  dispatchDate?: string;
   letterType?: 'STANDARD' | 'DENGUE_CHIKUNGUNYA';
   createdBy: string;
   createdAt: string;
@@ -347,5 +350,17 @@ export interface SubcenterVillageImportSummary {
   invalidRows?: number;
   duplicateRows?: number;
   rows?: SubcenterVillageImportRow[];
+}
+
+export interface DispatchSampleRecord {
+  id: string; // e.g. 'DSP-LTR-001-WS-001'
+  dispatchId: string;
+  sampleId: string;
+  sampleTypeId: string;
+  collectionDate: string;
+  subcenterName?: string;
+  villageName: string;
+  sourceName?: string;
+  createdAt: string;
 }
 

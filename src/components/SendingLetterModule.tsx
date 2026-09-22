@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { clientStore } from '../services/clientStore';
 import {
   SampleRecord,
@@ -23,6 +23,15 @@ import {
   ArrowRight,
   Eye,
   HeartPulse,
+  ChevronDown,
+  ChevronRight,
+  MapPin,
+  Layers,
+  ListFilter,
+  Check,
+  MinusSquare,
+  Folder,
+  FolderOpen,
 } from 'lucide-react';
 import { DengueDocumentationModule } from './DengueDocumentationModule';
 
@@ -32,9 +41,21 @@ interface SendingLetterModuleProps {
 
 export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ currentUser }) => {
   const sampleTypes = clientStore.getSampleTypes();
+  const subcenters = clientStore.getSubcenters();
+  const villages = clientStore.getVillages();
+  const sources = clientStore.getSources();
+
   const [activeTabMode, setActiveTabMode] = useState<'STANDARD' | 'DENGUE'>('STANDARD');
   const [selectedTypeId, setSelectedTypeId] = useState<string>(sampleTypes[0]?.id || 'ST-001');
   const [selectedSampleIds, setSelectedSampleIds] = useState<string[]>([]);
+
+  // Multi-Centre / Multi-Village / Multi-Source Dispatch Filters
+  const [filterCollectionDate, setFilterCollectionDate] = useState<string>('');
+  const [filterSubcenterId, setFilterSubcenterId] = useState<string>('ALL');
+  const [filterVillageId, setFilterVillageId] = useState<string>('ALL');
+  const [filterSourceId, setFilterSourceId] = useState<string>('ALL');
+  const [filterDispatchStatus, setFilterDispatchStatus] = useState<'PENDING' | 'DISPATCHED' | 'ALL'>('PENDING');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Letter Fields
   const [letterNumber, setLetterNumber] = useState<string>(
@@ -66,12 +87,152 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
 
   const currentSampleType = sampleTypes.find((st) => st.id === selectedTypeId) || sampleTypes[0];
 
-  // Eligible samples for dispatch (Collected or Ready for Dispatch)
-  const availableSamples = clientStore.getSamples({
-    sampleTypeId: selectedTypeId,
-  }).filter((s) => s.status === 'Collected' || s.status === 'Ready for Dispatch' || s.status === 'Draft');
+  // Cascading villages based on subcenter
+  const availableVillages = filterSubcenterId === 'ALL'
+    ? villages
+    : villages.filter((v) => v.subcenterId === filterSubcenterId || v.subcenterName === filterSubcenterId);
+
+  // Cascading sources based on village
+  const availableSources = filterVillageId === 'ALL'
+    ? sources
+    : sources.filter((s) => s.villageId === filterVillageId);
+
+  // Store update subscription for reactivity
+  const [storeVersion, setStoreVersion] = useState(0);
+  useEffect(() => {
+    return clientStore.subscribe(() => setStoreVersion((v) => v + 1));
+  }, []);
+
+  // Hierarchical view state (default expanded, so user does NOT have to reopen)
+  const [collapsedSubcenters, setCollapsedSubcenters] = useState<Record<string, boolean>>({});
+  const [collapsedVillages, setCollapsedVillages] = useState<Record<string, boolean>>({});
+
+  const toggleSubcenterCollapse = (scId: string) => {
+    setCollapsedSubcenters((prev) => ({ ...prev, [scId]: !prev[scId] }));
+  };
+
+  const toggleVillageCollapse = (vilId: string) => {
+    setCollapsedVillages((prev) => ({ ...prev, [vilId]: !prev[vilId] }));
+  };
+
+  // Authoritative Set lookup for O(1) checks and continuous multi-selection
+  const selectedSampleIdsSet = useMemo(() => new Set(selectedSampleIds), [selectedSampleIds]);
+
+  // Query eligible samples for dispatch according to all multi-dimensional filters
+  const allFilteredSamples = useMemo(() => {
+    return clientStore.getSamples({
+      sampleTypeId: selectedTypeId,
+      subcenterId: filterSubcenterId !== 'ALL' ? filterSubcenterId : undefined,
+      villageId: filterVillageId !== 'ALL' ? filterVillageId : undefined,
+      sourceId: filterSourceId !== 'ALL' ? filterSourceId : undefined,
+      collectionDate: filterCollectionDate && filterCollectionDate !== 'ALL' ? filterCollectionDate : undefined,
+      searchQuery: searchQuery.trim() || undefined,
+    });
+  }, [selectedTypeId, filterSubcenterId, filterVillageId, filterSourceId, filterCollectionDate, searchQuery, storeVersion]);
+
+  const availableSamples = useMemo(() => {
+    return allFilteredSamples.filter((s) => {
+      if (filterDispatchStatus === 'PENDING') {
+        return (
+          s.status === 'Collected' ||
+          s.status === 'Ready for Dispatch' ||
+          s.status === 'Draft' ||
+          (!s.sendingLetterNumber && s.status !== 'Dispatched')
+        );
+      }
+      if (filterDispatchStatus === 'DISPATCHED') {
+        return s.status === 'Dispatched' || Boolean(s.sendingLetterNumber);
+      }
+      return true;
+    });
+  }, [allFilteredSamples, filterDispatchStatus]);
+
+  // Hierarchical Grouping: Subcenter -> Village -> Sources/Samples
+  const hierarchicalGroups = useMemo(() => {
+    const scMap = new Map<
+      string,
+      {
+        subcenterId: string;
+        subcenterName: string;
+        villageMap: Map<string, { villageId: string; villageName: string; samples: SampleRecord[] }>;
+        allSamples: SampleRecord[];
+      }
+    >();
+
+    for (const sample of availableSamples) {
+      const scId = sample.subcenterId || 'SC-BHD-01';
+      const scName = sample.subcenterName || sample.subcenter || 'भादा';
+      const vilId = sample.villageId || 'VIL-001';
+      const vilName = sample.villageName || 'भादा';
+
+      if (!scMap.has(scId)) {
+        scMap.set(scId, {
+          subcenterId: scId,
+          subcenterName: scName,
+          villageMap: new Map(),
+          allSamples: [],
+        });
+      }
+
+      const scObj = scMap.get(scId)!;
+      scObj.allSamples.push(sample);
+
+      if (!scObj.villageMap.has(vilId)) {
+        scObj.villageMap.set(vilId, {
+          villageId: vilId,
+          villageName: vilName,
+          samples: [],
+        });
+      }
+
+      scObj.villageMap.get(vilId)!.samples.push(sample);
+    }
+
+    return Array.from(scMap.values()).map((sc) => ({
+      subcenterId: sc.subcenterId,
+      subcenterName: sc.subcenterName,
+      allSamples: sc.allSamples,
+      villages: Array.from(sc.villageMap.values()),
+    }));
+  }, [availableSamples]);
+
+  const expandAll = () => {
+    setCollapsedSubcenters({});
+    setCollapsedVillages({});
+  };
+
+  const collapseAll = () => {
+    const newCollapsedSc: Record<string, boolean> = {};
+    const newCollapsedVil: Record<string, boolean> = {};
+    for (const group of hierarchicalGroups) {
+      newCollapsedSc[group.subcenterId] = true;
+      for (const vil of group.villages) {
+        newCollapsedVil[vil.villageId] = true;
+      }
+    }
+    setCollapsedSubcenters(newCollapsedSc);
+    setCollapsedVillages(newCollapsedVil);
+  };
 
   const existingLetters = clientStore.getSendingLetters();
+
+  // Selected sample records objects (from clientStore) - guaranteed unique rows
+  const selectedSamplesList: SampleRecord[] = useMemo(() => {
+    return Array.from(selectedSampleIdsSet)
+      .map((id) => clientStore.getSampleById(id))
+      .filter((s): s is SampleRecord => s !== null);
+  }, [selectedSampleIdsSet]);
+
+  // Metrics for multi-selection across centers/villages
+  const uniqueSelectedSubcenters = Array.from(
+    new Set(selectedSamplesList.map((s) => s.subcenter || s.subcenterName || 'भादा').filter(Boolean))
+  );
+  const uniqueSelectedVillages = Array.from(
+    new Set(selectedSamplesList.map((s) => s.villageName).filter(Boolean))
+  );
+  const uniqueSelectedSources = Array.from(
+    new Set(selectedSamplesList.map((s) => s.sourceName || s.patientName || s.id).filter(Boolean))
+  );
 
   const handleTypeChange = (typeId: string) => {
     setSelectedTypeId(typeId);
@@ -88,25 +249,99 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
     }
   };
 
+  // Bulk selection: Global Select All
   const handleSelectAll = () => {
-    if (selectedSampleIds.length === availableSamples.length) {
-      setSelectedSampleIds([]);
-    } else {
-      setSelectedSampleIds(availableSamples.map((s) => s.id));
-    }
+    const selectableIds = availableSamples
+      .filter((s) => s.status !== 'Dispatched' || !s.sendingLetterNumber)
+      .map((s) => s.id);
+
+    if (selectableIds.length === 0) return;
+
+    const allSelected = selectableIds.every((id) => selectedSampleIdsSet.has(id));
+    setSelectedSampleIds((prev) => {
+      const nextSet = new Set(prev);
+      if (allSelected) {
+        selectableIds.forEach((id) => nextSet.delete(id));
+      } else {
+        selectableIds.forEach((id) => nextSet.add(id));
+      }
+      return Array.from(nextSet);
+    });
   };
 
+  // Bulk selection: Subcenter-level Select All
+  const handleToggleSubcenter = (scSampleIds: string[]) => {
+    const selectableIds = scSampleIds.filter((id) => {
+      const s = clientStore.getSampleById(id);
+      return !s || s.status !== 'Dispatched' || !s.sendingLetterNumber;
+    });
+
+    if (selectableIds.length === 0) return;
+
+    const allSelected = selectableIds.every((id) => selectedSampleIdsSet.has(id));
+    setSelectedSampleIds((prev) => {
+      const nextSet = new Set(prev);
+      if (allSelected) {
+        selectableIds.forEach((id) => nextSet.delete(id));
+      } else {
+        selectableIds.forEach((id) => nextSet.add(id));
+      }
+      return Array.from(nextSet);
+    });
+  };
+
+  // Bulk selection: Village-level Select All
+  const handleToggleVillage = (vilSampleIds: string[]) => {
+    const selectableIds = vilSampleIds.filter((id) => {
+      const s = clientStore.getSampleById(id);
+      return !s || s.status !== 'Dispatched' || !s.sendingLetterNumber;
+    });
+
+    if (selectableIds.length === 0) return;
+
+    const allSelected = selectableIds.every((id) => selectedSampleIdsSet.has(id));
+    setSelectedSampleIds((prev) => {
+      const nextSet = new Set(prev);
+      if (allSelected) {
+        selectableIds.forEach((id) => nextSet.delete(id));
+      } else {
+        selectableIds.forEach((id) => nextSet.add(id));
+      }
+      return Array.from(nextSet);
+    });
+  };
+
+  // Single sample selection: strictly tracked by authoritative sample_id
   const handleToggleSample = (id: string) => {
-    if (selectedSampleIds.includes(id)) {
-      setSelectedSampleIds(selectedSampleIds.filter((item) => item !== id));
-    } else {
-      setSelectedSampleIds([...selectedSampleIds, id]);
+    const sample = clientStore.getSampleById(id);
+    if (sample && sample.status === 'Dispatched' && sample.sendingLetterNumber) {
+      alert(`नमुना क्र. '${id}' आधीच जावक पत्र क्र. ${sample.sendingLetterNumber} मध्ये पाठविला गेला आहे.`);
+      return;
     }
+
+    setSelectedSampleIds((prev) => {
+      const nextSet = new Set(prev);
+      if (nextSet.has(id)) {
+        nextSet.delete(id);
+      } else {
+        nextSet.add(id);
+      }
+      return Array.from(nextSet);
+    });
+  };
+
+  const handleRemoveSelectedSample = (id: string) => {
+    setSelectedSampleIds((prev) => {
+      const nextSet = new Set(prev);
+      nextSet.delete(id);
+      return Array.from(nextSet);
+    });
   };
 
   const handleGenerateLetter = () => {
     if (isSubmitting) return;
-    if (selectedSampleIds.length === 0) {
+    const distinctSampleIds = Array.from(new Set(selectedSampleIds));
+    if (distinctSampleIds.length === 0) {
       alert('कृपया पत्रात जोडण्यासाठी किमान एक नमुना निवडा.');
       return;
     }
@@ -123,16 +358,20 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
         reference,
         laboratoryName,
         dispatchMode,
-        sampleIds: selectedSampleIds,
-        sampleCount: selectedSampleIds.length,
+        sampleIds: distinctSampleIds,
+        sampleCount: distinctSampleIds.length,
         remarks,
         signatoryTitle: 'वैद्यकीय अधिकारी, प्राथमिक आरोग्य केंद्र भादा, ता. औसा, जि. लातूर',
       });
 
       setActiveLetter(createdLetter);
-      setSuccessMsg(`जावक पत्र '${createdLetter.letterNumber}' यशस्वीरित्या तयार करण्यात आले!`);
+      setSuccessMsg(
+        `जावक पत्र '${createdLetter.letterNumber}' यशस्वीरित्या तयार करण्यात आले! (${createdLetter.sampleCount} नमुने - ${uniqueSelectedVillages.length} गावे)`
+      );
       setSelectedSampleIds([]);
       setLetterNumber(clientStore.generateLetterNumber(selectedTypeId));
+    } catch (err: any) {
+      alert(err.message || 'जावक पत्र तयार करताना त्रुटी आढळली.');
     } finally {
       setIsSubmitting(false);
     }
@@ -224,11 +463,16 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Form: Select Samples & Letter Details */}
         <div className="lg:col-span-5 space-y-4 print:hidden">
-          {/* Sample Type Selector */}
+          {/* 1. Sample Type Selector */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              १. नमुना प्रकार निवडा:
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                १. नमुना प्रकार निवडा:
+              </label>
+              <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                {currentSampleType.codePrefix}
+              </span>
+            </div>
             <select
               value={selectedTypeId}
               onChange={(e) => handleTypeChange(e.target.value)}
@@ -242,89 +486,471 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
             </select>
           </div>
 
-          {/* Sample Selection List */}
+          {/* 2. Multi-Centre / Multi-Village / Multi-Source Filters */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span>२. नमुना शोध व गाळणी (Filters):</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterCollectionDate('');
+                  setFilterSubcenterId('ALL');
+                  setFilterVillageId('ALL');
+                  setFilterSourceId('ALL');
+                  setFilterDispatchStatus('PENDING');
+                  setSearchQuery('');
+                }}
+                className="text-[11px] text-slate-500 hover:text-slate-800 underline"
+              >
+                रिसेट करा
+              </button>
+            </div>
+
+            {/* Subcenter & Village filter row */}
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <div className="text-xs font-bold text-slate-900">
-                  २. पाठविण्यासाठी नमुने निवडा:
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  उपकेंद्र (Subcenter):
+                </label>
+                <select
+                  value={filterSubcenterId}
+                  onChange={(e) => {
+                    setFilterSubcenterId(e.target.value);
+                    setFilterVillageId('ALL');
+                    setFilterSourceId('ALL');
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                >
+                  <option value="ALL">सर्व उपकेंद्रे (All)</option>
+                  {subcenters.map((sc) => (
+                    <option key={sc.id} value={sc.id}>
+                      {sc.subcenterName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  गाव (Village):
+                </label>
+                <select
+                  value={filterVillageId}
+                  onChange={(e) => {
+                    setFilterVillageId(e.target.value);
+                    setFilterSourceId('ALL');
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                >
+                  <option value="ALL">सर्व गावे (All)</option>
+                  {availableVillages.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Source & Date filter row */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  पाणी स्त्रोत (Source):
+                </label>
+                <select
+                  value={filterSourceId}
+                  onChange={(e) => setFilterSourceId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                >
+                  <option value="ALL">सर्व स्त्रोत (All)</option>
+                  {availableSources.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.sourceName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  संकलन दिनांक:
+                </label>
+                <input
+                  type="date"
+                  value={filterCollectionDate}
+                  onChange={(e) => setFilterCollectionDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Dispatch Status & Search */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  पाठवणी स्थिती (Status):
+                </label>
+                <select
+                  value={filterDispatchStatus}
+                  onChange={(e) => setFilterDispatchStatus(e.target.value as any)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                >
+                  <option value="PENDING">प्रलंबित (Pending Dispatch)</option>
+                  <option value="DISPATCHED">पाठवलेले (Dispatched)</option>
+                  <option value="ALL">सर्व नमुने (All)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                  शोध (Search):
+                </label>
+                <input
+                  type="text"
+                  placeholder="गाव / बाटली क्र. / ID"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Sample Selection List - Hierarchical Subcenter -> Village -> Sources */}
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-emerald-800" />
+                  <span>३. पाठविण्यासाठी नमुने निवडा (Hierarchical Selection):</span>
                 </div>
-                <div className="text-[11px] text-slate-500">
-                  उपलब्ध नमुने: {availableSamples.length}
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  एकूण उपलब्ध: <span className="font-bold text-slate-800">{availableSamples.length} नमुने</span>
+                  {' • '}
+                  उपकेंद्रे: <span className="font-bold text-slate-800">{hierarchicalGroups.length}</span>
                 </div>
               </div>
 
-              {availableSamples.length > 0 && (
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={handleSelectAll}
-                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
+                  onClick={collapseAll}
+                  className="text-[11px] font-semibold text-slate-600 hover:text-slate-800 px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors"
+                  title="सर्व विभाग मिटवा"
                 >
-                  {selectedSampleIds.length === availableSamples.length ? (
-                    <>
-                      <CheckSquare className="w-3.5 h-3.5" />
-                      <span>सर्व काढा</span>
-                    </>
-                  ) : (
-                    <>
-                      <Square className="w-3.5 h-3.5" />
-                      <span>सर्व निवडा</span>
-                    </>
-                  )}
+                  सर्व मिटवा
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={expandAll}
+                  className="text-[11px] font-semibold text-slate-600 hover:text-slate-800 px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors"
+                  title="सर्व विभाग उघडा"
+                >
+                  सर्व उघडा
+                </button>
+
+                {availableSamples.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg border border-emerald-300 transition-colors"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    <span>
+                      {availableSamples.length > 0 && availableSamples.every((s) => selectedSampleIdsSet.has(s.id))
+                        ? 'सर्व काढा'
+                        : 'सर्व निवडा'}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 space-y-1">
-              {availableSamples.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs">
-                  या प्रकारातील पाठविण्यासाठी कोणतेही प्रलंबित नमुने नाहीत. नवीन नमुना नोंदणी करा.
+            {/* Hierarchical Tree Body */}
+            <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1">
+              {hierarchicalGroups.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  निवडलेल्या निकषांनुसार कोणतेही नमुने सापडले नाहीत.
                 </div>
               ) : (
-                availableSamples.map((sample) => {
-                  const isChecked = selectedSampleIds.includes(sample.id);
+                hierarchicalGroups.map((scGroup) => {
+                  const isScCollapsed = Boolean(collapsedSubcenters[scGroup.subcenterId]);
+                  const scSampleIds = scGroup.allSamples.map((s) => s.id);
+                  const scSelectedCount = scSampleIds.filter((id) => selectedSampleIdsSet.has(id)).length;
+                  const isScAllSelected = scSampleIds.length > 0 && scSelectedCount === scSampleIds.length;
+                  const isScPartiallySelected = scSelectedCount > 0 && !isScAllSelected;
+
                   return (
                     <div
-                      key={sample.id}
-                      onClick={() => handleToggleSample(sample.id)}
-                      className={`p-2 rounded-lg cursor-pointer flex items-center justify-between text-xs transition-colors ${
-                        isChecked ? 'bg-emerald-50 border border-emerald-300 font-semibold' : 'hover:bg-slate-50'
-                      }`}
+                      key={scGroup.subcenterId}
+                      className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs"
                     >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}}
-                          className="rounded text-emerald-600 focus:ring-emerald-500"
-                        />
-                        <div>
-                          <div className="font-mono text-emerald-950 font-bold">{sample.id}</div>
-                          <div className="text-[11px] text-slate-600">
-                            {sample.villageName} — {sample.sourceName || sample.patientName || sample.shopOrInstitutionName}
-                          </div>
+                      {/* Subcenter Header */}
+                      <div className="bg-slate-100/90 border-b border-slate-200 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer select-none"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSubcenterCollapse(scGroup.subcenterId);
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSubcenterCollapse(scGroup.subcenterId);
+                            }}
+                            className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-200 transition-colors"
+                            aria-label="उपकेंद्र उघडा/मिटवा"
+                          >
+                            {isScCollapsed ? (
+                              <ChevronRight className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
+                          <Building2 className="w-4 h-4 text-emerald-800" />
+                          <span className="font-bold text-xs text-slate-900">
+                            उपकेंद्र: {scGroup.subcenterName}
+                          </span>
+                          <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-medium">
+                            {scGroup.villages.length} गावे • {scGroup.allSamples.length} नमुने
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-semibold text-slate-600">
+                            {scSelectedCount}/{scGroup.allSamples.length} निवडले
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSubcenter(scSampleIds);
+                            }}
+                            className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+                              isScAllSelected
+                                ? 'bg-emerald-800 text-white hover:bg-emerald-900'
+                                : isScPartiallySelected
+                                ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 border border-emerald-300'
+                                : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-300'
+                            }`}
+                          >
+                            {isScAllSelected ? (
+                              <CheckSquare className="w-3.5 h-3.5" />
+                            ) : isScPartiallySelected ? (
+                              <MinusSquare className="w-3.5 h-3.5 text-emerald-700" />
+                            ) : (
+                              <Square className="w-3.5 h-3.5 text-slate-400" />
+                            )}
+                            <span className="text-[11px]">
+                              {isScAllSelected ? 'उपकेंद्र काढा' : 'उपकेंद्र निवडा'}
+                            </span>
+                          </button>
                         </div>
                       </div>
-                      <div className="text-right text-[10px] text-slate-500">
-                        <div>{sample.collectionDate}</div>
-                        <div className="text-emerald-700 font-medium">{sample.sampleQuantity}</div>
-                      </div>
+
+                      {/* Subcenter Body: Villages */}
+                      {!isScCollapsed && (
+                        <div className="p-2 space-y-2.5 bg-slate-50/50">
+                          {scGroup.villages.map((vilGroup) => {
+                            const isVilCollapsed = Boolean(collapsedVillages[vilGroup.villageId]);
+                            const vilSampleIds = vilGroup.samples.map((s) => s.id);
+                            const vilSelectedCount = vilSampleIds.filter((id) => selectedSampleIdsSet.has(id)).length;
+                            const isVilAllSelected = vilSampleIds.length > 0 && vilSelectedCount === vilSampleIds.length;
+                            const isVilPartiallySelected = vilSelectedCount > 0 && !isVilAllSelected;
+
+                            return (
+                              <div
+                                key={vilGroup.villageId}
+                                className="border border-slate-200/90 rounded-lg overflow-hidden bg-white shadow-2xs"
+                              >
+                                {/* Village Header */}
+                                <div className="bg-slate-100/60 border-b border-slate-200 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2">
+                                  <div
+                                    className="flex items-center gap-1.5 cursor-pointer select-none"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleVillageCollapse(vilGroup.villageId);
+                                    }}
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleVillageCollapse(vilGroup.villageId);
+                                      }}
+                                      className="p-0.5 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-200 transition-colors"
+                                      aria-label="गावातील नमुने उघडा/मिटवा"
+                                    >
+                                      {isVilCollapsed ? (
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                      ) : (
+                                        <ChevronDown className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
+                                    <MapPin className="w-3.5 h-3.5 text-blue-700" />
+                                    <span className="font-bold text-xs text-slate-900">
+                                      गाव: {vilGroup.villageName}
+                                    </span>
+                                    <span className="text-[10px] bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.2 rounded font-medium">
+                                      {vilGroup.samples.length} स्त्रोत/नमुने
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-semibold text-slate-600">
+                                      {vilSelectedCount}/{vilGroup.samples.length} निवडले
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleVillage(vilSampleIds);
+                                      }}
+                                      className={`text-[11px] font-bold flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
+                                        isVilAllSelected
+                                          ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                                          : isVilPartiallySelected
+                                          ? 'bg-emerald-50 text-emerald-900 border border-emerald-300'
+                                          : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300'
+                                      }`}
+                                    >
+                                      {isVilAllSelected ? (
+                                        <CheckSquare className="w-3 h-3" />
+                                      ) : isVilPartiallySelected ? (
+                                        <MinusSquare className="w-3 h-3 text-emerald-700" />
+                                      ) : (
+                                        <Square className="w-3 h-3 text-slate-400" />
+                                      )}
+                                      <span>{isVilAllSelected ? 'गाव काढा' : 'गाव निवडा'}</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Village Body: Sources/Samples list */}
+                                {!isVilCollapsed && (
+                                  <div className="p-2 space-y-1.5 divide-y divide-slate-100">
+                                    {vilGroup.samples.map((sample) => {
+                                      const isChecked = selectedSampleIdsSet.has(sample.id);
+                                      const isDispatched = sample.status === 'Dispatched' || Boolean(sample.sendingLetterNumber);
+
+                                      return (
+                                        <div
+                                          key={sample.id}
+                                          id={`sample-card-${sample.id}`}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (!isDispatched) {
+                                              handleToggleSample(sample.id);
+                                            }
+                                          }}
+                                          className={`p-2.5 rounded-lg flex items-center justify-between text-xs transition-all select-none ${
+                                            isDispatched
+                                              ? 'bg-slate-100/70 border border-slate-200 opacity-60 cursor-not-allowed'
+                                              : isChecked
+                                              ? 'bg-emerald-50/90 border border-emerald-400 font-semibold shadow-2xs cursor-pointer'
+                                              : 'hover:bg-slate-50 border border-slate-200/60 cursor-pointer'
+                                          }`}
+                                        >
+                                          <div className="flex items-start gap-2.5">
+                                            <div className="pt-0.5">
+                                              <input
+                                                type="checkbox"
+                                                id={`checkbox-${sample.id}`}
+                                                checked={isChecked}
+                                                disabled={isDispatched}
+                                                onClick={(e) => e.stopPropagation()}
+                                                onChange={(e) => {
+                                                  e.stopPropagation();
+                                                  if (!isDispatched) {
+                                                    handleToggleSample(sample.id);
+                                                  }
+                                                }}
+                                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer disabled:cursor-not-allowed"
+                                              />
+                                            </div>
+                                            <div className="space-y-0.5">
+                                              <div className="flex flex-wrap items-center gap-1.5">
+                                                <span className="font-mono text-emerald-950 font-bold text-[11px]">
+                                                  {sample.id}
+                                                </span>
+                                                {sample.sampleCodeOrBottleNo && (
+                                                  <span className="text-[10px] font-mono font-bold bg-cyan-100 text-cyan-900 px-1.5 py-0.2 rounded border border-cyan-200">
+                                                    बाटली क्र: {sample.sampleCodeOrBottleNo}
+                                                  </span>
+                                                )}
+                                                {sample.sourceType && (
+                                                  <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded border border-slate-200">
+                                                    {sample.sourceType}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <div className="text-[11px] text-slate-800">
+                                                <span className="font-semibold">
+                                                  {sample.sourceName || sample.patientName || sample.shopOrInstitutionName || 'पाणी स्त्रोत'}
+                                                </span>
+                                                {sample.sampleDescription && (
+                                                  <span className="text-slate-500 text-[10px]"> — {sample.sampleDescription}</span>
+                                                )}
+                                              </div>
+                                              {isDispatched && (
+                                                <div className="text-[10px] text-amber-800 font-semibold">
+                                                  आधीच पाठवले (जावक क्र. {sample.sendingLetterNumber})
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          <div className="text-right text-[10px] text-slate-500 shrink-0 ml-2">
+                                            <div className="font-mono font-medium text-slate-700">
+                                              दिनांक: {sample.collectionDate}
+                                            </div>
+                                            <div className="text-emerald-800 font-semibold">
+                                              {sample.sampleQuantity || 'प्रमाण: Standard'}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })
               )}
             </div>
 
-            <div className="text-xs font-bold text-slate-800 bg-slate-50 p-2 rounded border border-slate-200 flex items-center justify-between">
-              <span>निवडलेले एकूण नमुने:</span>
-              <span className="text-emerald-800 font-mono text-sm">{selectedSampleIds.length}</span>
+            {/* Selection Metrics Footer */}
+            <div className="text-xs font-bold text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <span>एकूण निवडलेले नमुने:</span>
+                <span className="text-emerald-800 font-mono text-base font-black">
+                  {selectedSampleIds.length}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-slate-600 font-medium">
+                <span>उपकेंद्रे: <strong className="text-slate-900">{uniqueSelectedSubcenters.length}</strong></span>
+                <span>•</span>
+                <span>गावे: <strong className="text-slate-900">{uniqueSelectedVillages.length}</strong></span>
+                <span>•</span>
+                <span>स्त्रोत: <strong className="text-slate-900">{uniqueSelectedSources.length}</strong></span>
+              </div>
             </div>
           </div>
 
-          {/* Letter Meta Inputs */}
+          {/* 4. Letter Meta Inputs */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
             <div className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-2">
-              ३. शासकीय जावक पत्र तपशील:
+              ४. शासकीय जावक पत्र तपशील (Forwarding Details):
             </div>
 
             <div>
@@ -371,6 +997,18 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                प्रयोगशाळा (Laboratory)*:
+              </label>
+              <input
+                type="text"
+                value={laboratoryName}
+                onChange={(e) => setLaboratoryName(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
                 प्रति / कोणास (To Authority)*:
               </label>
               <input
@@ -397,14 +1035,18 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
               type="button"
               onClick={handleGenerateLetter}
               disabled={isSubmitting || selectedSampleIds.length === 0}
-              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 ${
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 ${
                 !isSubmitting && selectedSampleIds.length > 0
                   ? 'bg-emerald-800 hover:bg-emerald-900 text-white cursor-pointer'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
             >
               <Send className="w-4 h-4" />
-              <span>{isSubmitting ? 'पत्र तयार होत आहे...' : `जावक पत्र तयार करा (${selectedSampleIds.length} नमुने)`}</span>
+              <span>
+                {isSubmitting
+                  ? 'पत्र तयार होत आहे...'
+                  : `एकत्रित पाठवणी नोंद करा व जावक पत्र तयार करा (${selectedSampleIds.length} नमुने)`}
+              </span>
             </button>
           </div>
 
@@ -434,48 +1076,160 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
           )}
         </div>
 
-        {/* Right Output: A4 Official Government Letter Preview & Stickers */}
+        {/* Right Column: Selected Samples Review Table OR Letter Preview */}
         <div className="lg:col-span-7 space-y-4">
+          {/* Header Controls when reviewing or viewing letter */}
           <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm print:hidden">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowStickers(false)}
+                onClick={() => {
+                  setShowStickers(false);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  !showStickers ? 'bg-emerald-800 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  !showStickers && activeLetter
+                    ? 'bg-emerald-800 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 inline mr-1" />
                 शासकीय जावक पत्र (Official Letter)
               </button>
-              <button
-                onClick={() => setShowStickers(true)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  showStickers ? 'bg-emerald-800 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                <Tag className="w-3.5 h-3.5 inline mr-1" />
-                बाटली/पॅकेट स्टिकर्स (Bottle Stickers)
-              </button>
+              {activeLetter && (
+                <button
+                  onClick={() => setShowStickers(true)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    showStickers ? 'bg-emerald-800 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  <Tag className="w-3.5 h-3.5 inline mr-1" />
+                  बाटली स्टिकर्स (Bottle Stickers)
+                </button>
+              )}
+              {activeLetter && (
+                <button
+                  onClick={() => setActiveLetter(null)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200"
+                >
+                  नवीन पाठवणी (New Dispatch)
+                </button>
+              )}
             </div>
 
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>प्रिंट (Print)</span>
-            </button>
+            {activeLetter && (
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>प्रिंट (Print)</span>
+              </button>
+            )}
           </div>
 
-          {!activeLetter ? (
+          {/* Review Table of Selected Samples BEFORE dispatch (Requirement 1) */}
+          {!activeLetter && selectedSamplesList.length > 0 && (
+            <div className="bg-white rounded-xl border border-emerald-300 p-5 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div>
+                  <div className="text-sm font-bold text-slate-900">
+                    निवडलेल्या नमुन्यांची तपासणी (Selected Samples for Dispatch Review)
+                  </div>
+                  <div className="text-xs text-slate-600 mt-0.5">
+                    सदर सर्व नमुने एकाच जावक पत्रासोबत प्रयोगशाळेत पाठविले जातील.
+                  </div>
+                </div>
+
+                {/* Summary Metrics */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-full border border-emerald-200">
+                    एकूण: {selectedSamplesList.length} नमुने
+                  </span>
+                  <span className="text-xs font-bold bg-blue-100 text-blue-900 px-2.5 py-1 rounded-full border border-blue-200">
+                    उपकेंद्रे: {uniqueSelectedSubcenters.length}
+                  </span>
+                  <span className="text-xs font-bold bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full border border-amber-200">
+                    गावे: {uniqueSelectedVillages.length}
+                  </span>
+                  <span className="text-xs font-bold bg-purple-100 text-purple-900 px-2.5 py-1 rounded-full border border-purple-200">
+                    स्त्रोत: {uniqueSelectedSources.length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Requirement Table:
+                  Sr.No | Subcenter | Village | Source | Sample Type | Collection Date | Bottle No.
+              */}
+              <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-800 text-center font-bold">
+                      <th className="p-2 border-b border-slate-200">Sr.No</th>
+                      <th className="p-2 border-b border-slate-200">Subcenter</th>
+                      <th className="p-2 border-b border-slate-200">Village</th>
+                      <th className="p-2 border-b border-slate-200">Source</th>
+                      <th className="p-2 border-b border-slate-200">Sample Type</th>
+                      <th className="p-2 border-b border-slate-200">Collection Date</th>
+                      <th className="p-2 border-b border-slate-200">Bottle No.</th>
+                      <th className="p-2 border-b border-slate-200">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {selectedSamplesList.map((s, idx) => (
+                      <tr key={s.id} className="hover:bg-slate-50 text-center">
+                        <td className="p-2 font-mono">{idx + 1}</td>
+                        <td className="p-2 text-slate-700 font-medium">{s.subcenter || s.subcenterName || '-'}</td>
+                        <td className="p-2 font-bold text-slate-900">{s.villageName}</td>
+                        <td className="p-2 text-left pl-3 text-slate-800">
+                          {s.sourceName || s.patientName || s.shopOrInstitutionName || '-'}
+                        </td>
+                        <td className="p-2 text-slate-600">{s.sampleTypeName}</td>
+                        <td className="p-2 font-mono text-slate-800">{s.collectionDate}</td>
+                        <td className="p-2 font-mono font-bold text-cyan-950">
+                          {s.sampleCodeOrBottleNo || s.batchNumber || '-'}
+                        </td>
+                        <td className="p-2">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSelectedSample(s.id)}
+                            className="text-red-600 hover:text-red-800 text-[11px] font-bold px-1.5 py-0.5 rounded hover:bg-red-50"
+                          >
+                            काढा
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+                <span className="text-xs text-slate-600">
+                  कृपया डाव्या बाजूला जावक क्रमांक व प्रेषण माहिती तपासून "एकत्रित पाठवणी नोंद करा व जावक पत्र तयार करा" वर क्लिक करा.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleGenerateLetter}
+                  disabled={isSubmitting}
+                  className="bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition-all"
+                >
+                  {isSubmitting ? 'पत्र तयार होत आहे...' : 'जावक पत्र तयार करा'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!activeLetter && selectedSamplesList.length === 0 && (
             <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 space-y-3 shadow-sm print:hidden">
               <FileText className="w-12 h-12 mx-auto text-slate-300" />
-              <div className="font-bold text-slate-700">कोणतेही जावक पत्र निवडलेले नाही</div>
+              <div className="font-bold text-slate-700">कोणतेही नमुने निवडलेले नाहीत</div>
               <p className="text-xs max-w-sm mx-auto text-slate-500">
-                डाव्या बाजूला नमुने निवडून "जावक पत्र तयार करा" बटणावर क्लिक करा किंवा खालील यादीतून पूर्वीचे पत्र निवडा.
+                डाव्या बाजूला उपकेंद्र, गाव, पाणी स्त्रोत किंवा संकलन दिनांकानुसार फिल्टर करून पाठविण्यासाठी नमुने निवडा. एकाच पावतीमध्ये अनेक उपकेंद्रे व गावे निवडता येतात.
               </p>
             </div>
-          ) : showStickers ? (
+          )}
+
+          {/* Letter Preview & Print when activeLetter exists */}
+          {activeLetter && showStickers && (
             /* STICKERS PRINT SHEET */
             <div className="bg-white rounded-xl border border-slate-300 p-6 shadow-md print:border-none print:shadow-none print:p-0">
               <div className="text-center font-bold text-xs text-slate-700 mb-4 print:hidden border-b pb-2">
@@ -521,7 +1275,9 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
                 ))}
               </div>
             </div>
-          ) : (
+          )}
+
+          {activeLetter && !showStickers && (
             /* OFFICIAL A4 GOVERNMENT SENDING LETTER */
             <div className="bg-white rounded-xl border border-slate-300 p-8 shadow-md text-slate-900 space-y-6 print:border-none print:shadow-none print:p-0 print:m-0 font-serif leading-relaxed">
               {/* Government Header */}
@@ -570,22 +1326,24 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
                   महोदय/महोदया,
                 </p>
                 <p className="indent-8 mt-2">
-                  उपरोक्त विषयान्वये सविनय सादर करण्यात येते की, प्राथमिक आरोग्य केंद्र भादा कार्यक्षेत्रातील खालील नमूद गावातील {activeLetter.sampleTypeName} तपासणीकरिता सोबत पाठविण्यात येत आहेत. सदर नमुन्यांची विहित मानकांनुसार प्रयोगशाळा तपासणी करून त्याचा अधिकृत अहवाल या कार्यालयास त्वरित पाठवून सहकार्य करावे, ही नम्र विनंती.
+                  उपरोक्त विषयान्वये सविनय सादर करण्यात येते की, प्राथमिक आरोग्य केंद्र भादा कार्यक्षेत्रातील खालील नमूद विविध उपकेंद्रे व गावांमधील {activeLetter.sampleTypeName} तपासणीकरिता सोबत पाठविण्यात येत आहेत. सदर नमुन्यांची विहित मानकांनुसार प्रयोगशाळा तपासणी करून त्याचा अधिकृत अहवाल या कार्यालयास त्वरित पाठवून सहकार्य करावे, ही नम्र विनंती.
                 </p>
               </div>
 
               {/* Table of Samples */}
               <div className="space-y-1 font-sans">
-                <div className="text-xs font-bold text-slate-800">सोबत जोडलेल्या नमुन्यांचा तपशील (एकूण: {selectedSampleRecords.length} नमुने):</div>
+                <div className="text-xs font-bold text-slate-800">
+                  सोबत जोडलेल्या नमुन्यांचा तपशील (एकूण: {selectedSampleRecords.length} नमुने):
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse border border-slate-800 text-[11px]">
                     <thead>
                       <tr className="bg-slate-100 text-slate-900 text-center font-bold">
                         <th className="border border-slate-700 p-1.5">अ.क्र.</th>
-                        <th className="border border-slate-700 p-1.5">नमुना क्रमांक</th>
-                        <th className="border border-slate-700 p-1.5">गाव / उपकेंद्र</th>
-                        <th className="border border-slate-700 p-1.5">स्त्रोत / रुग्ण / दुकान</th>
-                        <th className="border border-slate-700 p-1.5">बाटली/बॅच क्र.</th>
+                        <th className="border border-slate-700 p-1.5">उपकेंद्र</th>
+                        <th className="border border-slate-700 p-1.5">गाव</th>
+                        <th className="border border-slate-700 p-1.5">पाणी स्त्रोत / रुग्ण</th>
+                        <th className="border border-slate-700 p-1.5">बाटली क्र. / कोड</th>
                         <th className="border border-slate-700 p-1.5">संकलन दिनांक</th>
                         <th className="border border-slate-700 p-1.5">प्रमाण</th>
                       </tr>
@@ -594,12 +1352,12 @@ export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ curren
                       {selectedSampleRecords.map((s, idx) => (
                         <tr key={s.id} className="text-center">
                           <td className="border border-slate-700 p-1.5">{idx + 1}</td>
-                          <td className="border border-slate-700 p-1.5 font-mono font-bold text-slate-950">{s.id}</td>
-                          <td className="border border-slate-700 p-1.5">{s.villageName}</td>
+                          <td className="border border-slate-700 p-1.5">{s.subcenter || s.subcenterName || '-'}</td>
+                          <td className="border border-slate-700 p-1.5 font-bold text-slate-950">{s.villageName}</td>
                           <td className="border border-slate-700 p-1.5 text-left pl-2">
                             {s.sourceName || s.patientName || s.shopOrInstitutionName || '-'}
                           </td>
-                          <td className="border border-slate-700 p-1.5 font-mono">
+                          <td className="border border-slate-700 p-1.5 font-mono font-bold text-slate-900">
                             {s.sampleCodeOrBottleNo || s.batchNumber || '-'}
                           </td>
                           <td className="border border-slate-700 p-1.5 font-mono">{s.collectionDate}</td>

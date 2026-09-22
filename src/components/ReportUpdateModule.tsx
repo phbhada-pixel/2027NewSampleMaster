@@ -17,6 +17,10 @@ import {
   TestTube,
   Check,
   X,
+  CheckSquare,
+  Square,
+  Layers,
+  ListChecks,
 } from 'lucide-react';
 
 interface ReportUpdateModuleProps {
@@ -26,17 +30,23 @@ interface ReportUpdateModuleProps {
 export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentUser }) => {
   const sampleTypes = clientStore.getSampleTypes();
   const villages = clientStore.getVillages();
+  const existingLetters = clientStore.getSendingLetters();
 
-  // Search & Filter State
+  // Mode: SINGLE vs BATCH (1 Report Ref for Multiple Sources)
+  const [entryMode, setEntryMode] = useState<'SINGLE' | 'BATCH'>('SINGLE');
+
+  // Search & Filter State (including Sent Date based search)
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTypeId, setSelectedTypeId] = useState<string>('ALL');
   const [selectedVillageId, setSelectedVillageId] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [filterSentDate, setFilterSentDate] = useState<string>('');
+  const [filterLetterNumber, setFilterLetterNumber] = useState<string>('ALL');
 
-  // Currently Editing Sample
+  // Currently Editing Sample (Single Mode)
   const [editingSample, setEditingSample] = useState<SampleRecord | null>(null);
 
-  // Form Fields for Lab Report Update
+  // Form Fields for Lab Report Update (Single Mode)
   const [reportReceivedDate, setReportReceivedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -44,6 +54,21 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
   const [result, setResult] = useState<string>('');
   const [laboratoryName, setLaboratoryName] = useState<string>('');
   const [reportRemarks, setReportRemarks] = useState<string>('');
+
+  // Batch Mode State (One Report Reference linked to Multiple Sample Records)
+  const [selectedBatchSampleIds, setSelectedBatchSampleIds] = useState<string[]>([]);
+  const [batchReportNumber, setBatchReportNumber] = useState<string>('');
+  const [batchReceivedDate, setBatchReceivedDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+  const [batchLaboratoryName, setBatchLaboratoryName] = useState<string>(
+    'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर'
+  );
+  const [batchCommonResult, setBatchCommonResult] = useState<string>('पिण्यास योग्य');
+  const [batchCommonRemarks, setBatchCommonRemarks] = useState<string>('');
+  const [individualOverrides, setIndividualOverrides] = useState<
+    Record<string, { result?: string; reportRemarks?: string }>
+  >({});
 
   // Quantitative parameters
   const [turbidity, setTurbidity] = useState<string>('');
@@ -70,11 +95,14 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Sent Date based and multi-attribute search
   const samples = clientStore.getSamples({
     sampleTypeId: selectedTypeId,
     villageId: selectedVillageId,
     status: statusFilter,
     searchQuery: searchQuery,
+    sendingDate: filterSentDate || undefined,
+    sendingLetterNumber: filterLetterNumber !== 'ALL' ? filterLetterNumber : undefined,
   });
 
   const handleSelectSample = (sample: SampleRecord) => {
@@ -207,16 +235,84 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
     }
   };
 
-  const getResultOptions = (sample: SampleRecord): string[] => {
+  const handleSaveBatchReport = () => {
+    if (selectedBatchSampleIds.length === 0 || isSubmitting) return;
+
+    if (!batchReportNumber.trim()) {
+      setNotification({ type: 'error', message: 'कृपया प्रयोगशाळा अहवाल संदर्भ क्रमांक (Report Reference Number) भरा.' });
+      return;
+    }
+
+    if (!batchReceivedDate) {
+      setNotification({ type: 'error', message: 'कृपया अहवाल प्राप्त दिनांक भरा.' });
+      return;
+    }
+
+    if (!batchCommonResult) {
+      setNotification({ type: 'error', message: 'कृपया प्रयोगशाळा तपासणी निकाल (Common Result) निवडा.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const updatedList = clientStore.updateBatchSampleReports(
+        selectedBatchSampleIds,
+        {
+          reportNumber: batchReportNumber.trim(),
+          reportReceivedDate: batchReceivedDate,
+          laboratoryName: batchLaboratoryName.trim(),
+          result: batchCommonResult,
+          reportRemarks: batchCommonRemarks.trim(),
+        },
+        individualOverrides
+      );
+
+      setIsSubmitting(false);
+
+      if (updatedList.length > 0) {
+        setNotification({
+          type: 'success',
+          message: `यशस्वी! संदर्भ क्र. ${batchReportNumber} अंतर्गत एकूण ${updatedList.length} नमुन्यांचा अहवाल अद्ययावत झाला!`,
+        });
+        setSelectedBatchSampleIds([]);
+        setIndividualOverrides({});
+      } else {
+        setNotification({ type: 'error', message: 'अहवाल जतन करताना त्रुटी आली.' });
+      }
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setNotification({ type: 'error', message: err?.message || 'अहवाल जतन करताना त्रुटी आली.' });
+    }
+  };
+
+  const toggleSelectAllBatch = () => {
+    if (selectedBatchSampleIds.length === samples.length && samples.length > 0) {
+      setSelectedBatchSampleIds([]);
+    } else {
+      setSelectedBatchSampleIds(samples.map((s) => s.id));
+    }
+  };
+
+  const toggleSampleBatchSelection = (id: string) => {
+    setSelectedBatchSampleIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const getResultOptions = (sample?: SampleRecord | null): string[] => {
+    if (!sample) {
+      return ['पिण्यास योग्य', 'पिण्यास अयोग्य', 'प्रमाणित', 'अप्रमाणित', 'पॉझिटिव्ह', 'निगेटिव्ह'];
+    }
     const st = sampleTypes.find((t) => t.id === sample.sampleTypeId);
     return st?.resultOptions || ['पिण्यास योग्य', 'पिण्यास अयोग्य', 'प्रमाणित', 'अप्रमाणित', 'पॉझिटिव्ह', 'निगेटिव्ह'];
   };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
-      {/* Header */}
+      {/* Header & Mode Switch */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
               <FileCheck className="w-5 h-5 text-emerald-700" />
@@ -226,8 +322,33 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
               प्राप्त प्रयोगशाळा अहवाल दिनांक, संदर्भ क्रमांक, तपासणी निकाल व गुणवत्ता शेरा नोंदवा
             </p>
           </div>
-          <div className="text-xs font-semibold bg-emerald-50 text-emerald-900 px-3 py-1 rounded-lg border border-emerald-200">
-            एकूण नमुने: {samples.length}
+
+          {/* Mode Switch: Single vs Batch */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setEntryMode('SINGLE')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                entryMode === 'SINGLE'
+                  ? 'bg-white text-emerald-800 shadow-sm border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>एकल नमुना (Single)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setEntryMode('BATCH')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                entryMode === 'BATCH'
+                  ? 'bg-emerald-700 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>एकत्रित अहवाल (Batch Entry - 1 Ref No.)</span>
+            </button>
           </div>
         </div>
       </div>
@@ -254,13 +375,23 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
         </div>
       )}
 
-      {/* Multi-Criteria Filter Bar */}
+      {/* Multi-Criteria Filter Bar with Sent Date Search */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+            <Filter className="w-4 h-4 text-emerald-700" />
+            <span>शोध व गाळणी (Search & Filters)</span>
+          </div>
+          <div className="text-[11px] font-semibold text-slate-500">
+            उपलब्ध नमुने: <span className="font-bold text-emerald-800">{samples.length}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {/* Global Search */}
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1">
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              शोध (Search ID/गाव/रुग्ण/पत्र क्र.):
+              शोध (ID / गाव / रुग्ण / स्त्रोत):
             </label>
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
@@ -308,6 +439,32 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
             </select>
           </div>
 
+          {/* Sent Date Filter (User Requirement: Search/filter report updates based on sent date) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-slate-700">
+                पाठवलेला दिनांक (Sent Date):
+              </label>
+              {filterSentDate && (
+                <button
+                  type="button"
+                  onClick={() => setFilterSentDate('')}
+                  className="text-[10px] text-rose-600 hover:underline font-semibold"
+                >
+                  काढा ✕
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="date"
+                value={filterSentDate}
+                onChange={(e) => setFilterSentDate(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+              />
+            </div>
+          </div>
+
           {/* Status Filter */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">अहवाल स्थिती:</label>
@@ -317,68 +474,148 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
               className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
             >
               <option value="ALL">सर्व स्थिती (All Status)</option>
-              <option value="Collected">Collected (संकलित)</option>
               <option value="Dispatched">Dispatched (पाठविलेले)</option>
               <option value="Report Pending">Report Pending (प्रलंबित)</option>
               <option value="Report Received">Report Received (प्राप्त)</option>
+              <option value="Collected">Collected (संकलित)</option>
             </select>
           </div>
         </div>
+
+        {/* Optional Filter by Outward Sending Letter Number */}
+        {existingLetters.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-600">जावक पत्र क्र. नुसार गाळा:</span>
+            <select
+              value={filterLetterNumber}
+              onChange={(e) => setFilterLetterNumber(e.target.value)}
+              className="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-mono font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none max-w-md"
+            >
+              <option value="ALL">सर्व जावक पत्रे (All Letters)</option>
+              {existingLetters.map((l) => (
+                <option key={l.id} value={l.letterNumber}>
+                  {l.letterNumber} ({l.letterDate || l.dispatchDate} • {l.sampleCount || 0} नमुने)
+                </option>
+              ))}
+            </select>
+            {filterLetterNumber !== 'ALL' && (
+              <button
+                type="button"
+                onClick={() => setFilterLetterNumber('ALL')}
+                className="text-xs text-rose-600 hover:underline font-semibold"
+              >
+                पत्र फिल्टर काढा ✕
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Sample Select List */}
-        <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
+        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
           <div className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center justify-between">
-            <span>अहवाल अद्ययावत करण्यासाठी नमुना निवडा:</span>
+            <div className="flex items-center gap-2">
+              {entryMode === 'BATCH' && (
+                <button
+                  type="button"
+                  onClick={toggleSelectAllBatch}
+                  className="p-0.5 hover:bg-slate-100 rounded text-emerald-800"
+                  title="सर्व निवडा / निवड रद्द करा"
+                >
+                  {selectedBatchSampleIds.length === samples.length && samples.length > 0 ? (
+                    <CheckSquare className="w-4 h-4 text-emerald-700" />
+                  ) : (
+                    <Square className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+              )}
+              <span>
+                {entryMode === 'BATCH'
+                  ? `एकत्रित नोंदणीसाठी नमुने निवडा (${selectedBatchSampleIds.length} निवडले):`
+                  : 'अहवाल अद्ययावत करण्यासाठी नमुना निवडा:'}
+              </span>
+            </div>
             <span className="text-[11px] text-slate-500 font-mono">({samples.length} नमुने)</span>
           </div>
 
-          <div className="max-h-[500px] overflow-y-auto divide-y divide-slate-100 space-y-1">
+          <div className="max-h-[560px] overflow-y-auto divide-y divide-slate-100 space-y-1 pr-1">
             {samples.length === 0 ? (
               <div className="text-center py-12 text-slate-400 text-xs">
-                शोध निकषानुसार कोणतेही नमुने आढळले नाहीत.
+                शोध व पाठवलेल्या दिनांक निकषानुसार कोणतेही नमुने आढळले नाहीत.
               </div>
             ) : (
               samples.map((sample) => {
-                const isSelected = editingSample?.id === sample.id;
+                const isSingleSelected = editingSample?.id === sample.id;
+                const isBatchSelected = selectedBatchSampleIds.includes(sample.id);
                 const hasReport = Boolean(sample.reportReceivedDate && sample.result);
+
                 return (
                   <div
                     key={sample.id}
-                    onClick={() => handleSelectSample(sample)}
+                    onClick={() => {
+                      if (entryMode === 'BATCH') {
+                        toggleSampleBatchSelection(sample.id);
+                      } else {
+                        handleSelectSample(sample);
+                      }
+                    }}
                     className={`p-3 rounded-lg cursor-pointer transition-all border ${
-                      isSelected
+                      entryMode === 'BATCH'
+                        ? isBatchSelected
+                          ? 'bg-emerald-50/80 border-emerald-600 shadow-sm'
+                          : 'bg-white hover:bg-slate-50 border-slate-200'
+                        : isSingleSelected
                         ? 'bg-emerald-50 border-emerald-600 shadow-sm'
                         : 'bg-white hover:bg-slate-50 border-slate-200'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-xs text-slate-900">{sample.id}</span>
-                          <span
-                            className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                              hasReport
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {hasReport ? 'अहवाल प्राप्त' : 'अहवाल प्रलंबित'}
-                          </span>
-                        </div>
-                        <div className="font-semibold text-xs text-slate-800 mt-1">
-                          {sample.villageName} — {sample.sourceName || sample.patientName || sample.shopOrInstitutionName}
-                        </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
-                          <span>संकलन: {sample.collectionDate}</span>
-                          {sample.sendingDate && <span>• पाठवले: {sample.sendingDate}</span>}
-                          {sample.sendingLetterNumber && (
-                            <span className="font-mono text-emerald-800 truncate max-w-[150px]">
-                              • {sample.sendingLetterNumber}
+                      <div className="flex items-start gap-2.5">
+                        {entryMode === 'BATCH' && (
+                          <div className="mt-0.5">
+                            {isBatchSelected ? (
+                              <CheckSquare className="w-4 h-4 text-emerald-700" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-300" />
+                            )}
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-xs text-slate-900">{sample.id}</span>
+                            {sample.bottleNumber && (
+                              <span className="font-mono text-[10px] bg-slate-100 text-slate-700 px-1 rounded border border-slate-200">
+                                बाटली क्र. {sample.bottleNumber}
+                              </span>
+                            )}
+                            <span
+                              className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                                hasReport
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {hasReport ? 'अहवाल प्राप्त' : 'अहवाल प्रलंबित'}
                             </span>
-                          )}
+                          </div>
+                          <div className="font-semibold text-xs text-slate-800 mt-1">
+                            {sample.villageName} — {sample.sourceName || sample.patientName || sample.shopOrInstitutionName}
+                          </div>
+                          <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
+                            <span>संकलन: {sample.collectionDate}</span>
+                            {sample.sendingDate && (
+                              <span className="font-semibold text-indigo-900 bg-indigo-50 px-1 rounded">
+                                पाठवले: {sample.sendingDate}
+                              </span>
+                            )}
+                            {sample.sendingLetterNumber && (
+                              <span className="font-mono text-emerald-800 truncate max-w-[150px]">
+                                • {sample.sendingLetterNumber}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -407,28 +644,270 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
           </div>
         </div>
 
-        {/* Lab Report Update Form */}
-        <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-            <div className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <FileCheck className="w-4 h-4 text-emerald-700" />
-              <span>प्रयोगशाळा अहवाल तपशील नोंदवा</span>
-            </div>
-            {editingSample && (
-              <span className="font-mono text-xs font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                {editingSample.id}
-              </span>
-            )}
-          </div>
-
-          {!editingSample ? (
-            <div className="py-16 text-center text-slate-400 space-y-2">
-              <FileText className="w-10 h-10 mx-auto text-slate-300" />
-              <div className="font-semibold text-xs text-slate-600">
-                डाव्या बाजूच्या यादीतून अहवाल अद्ययावत करण्यासाठी नमुना निवडा.
+        {/* Lab Report Update Form (Single or Batch) */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+          {entryMode === 'BATCH' ? (
+            /* BATCH REPORT UPDATE FORM */
+            <div className="space-y-4">
+              <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-emerald-700" />
+                    <span>एकत्रित प्रयोगशाळा अहवाल नोंदवा (Batch Report Entry)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    एकाच अहवाल संदर्भ क्रमांकाने (1 Report Ref No.) अनेक स्त्रोतांचे अहवाल एकाच वेळी नोंदवा
+                  </p>
+                </div>
+                <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 self-start sm:self-auto">
+                  {selectedBatchSampleIds.length} नमुने निवडले
+                </span>
               </div>
+
+              {selectedBatchSampleIds.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 space-y-2">
+                  <Layers className="w-12 h-12 mx-auto text-slate-300" />
+                  <div className="font-bold text-sm text-slate-700">
+                    कोणतेही नमुने निवडलेले नाहीत
+                  </div>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    डाव्या बाजूच्या यादीतून एकाच प्रयोगशाळा अहवालाशी संलग्न असलेले १ किंवा अधिक नमुने निवडा
+                    (उदा. एकाच जावक पत्राने तपासणीसाठी पाठवलेले विविध पाण्याचे स्त्रोत).
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 text-xs">
+                  {/* Common Lab Report Fields */}
+                  <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 space-y-3">
+                    <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>सामाईक प्रयोगशाळा अहवाल माहिती (Common Lab Report Details):</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          अहवाल प्राप्त दिनांक (Report Received Date)*:
+                        </label>
+                        <input
+                          type="date"
+                          value={batchReceivedDate}
+                          onChange={(e) => setBatchReceivedDate(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          प्रयोगशाळा अहवाल संदर्भ क्र. (Lab Ref / Outward No.)*:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="उदा. DPHL/LTR/2026/894"
+                          value={batchReportNumber}
+                          onChange={(e) => setBatchReportNumber(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-mono font-bold text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          तपासणी प्रयोगशाळा (Laboratory Name)*:
+                        </label>
+                        <input
+                          type="text"
+                          value={batchLaboratoryName}
+                          onChange={(e) => setBatchLaboratoryName(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          सामाईक निकाल (Common Result for All Selected)*:
+                        </label>
+                        <select
+                          value={batchCommonResult}
+                          onChange={(e) => setBatchCommonResult(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                        >
+                          <option value="पिण्यास योग्य">पिण्यास योग्य (Potable / Fit)</option>
+                          <option value="पिण्यास अयोग्य">पिण्यास अयोग्य (Non-Potable / Unfit)</option>
+                          <option value="प्रमाणित">प्रमाणित (Standard)</option>
+                          <option value="अप्रमाणित">अप्रमाणित (Sub-standard)</option>
+                          <option value="निगेटिव्ह">निगेटिव्ह (Negative)</option>
+                          <option value="पॉझिटिव्ह">पॉझिटिव्ह (Positive)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">
+                        सामाईक शेरा / सल्ला (Common Remarks):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="उदा. नमुने पिण्यास योग्य आहेत / सर्व स्त्रोत शुद्ध आढळले."
+                        value={batchCommonRemarks}
+                        onChange={(e) => setBatchCommonRemarks(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Table of Selected Samples with Per-Source Override Capability */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-800 text-xs">
+                        निवडलेले नमुने व वैयक्तिक निकाल तपशील ({selectedBatchSampleIds.length}):
+                      </label>
+                      <span className="text-[11px] text-slate-500">
+                        (एखाद्या स्त्रोताचा निकाल वेगळा असल्यास खाली बदलता येतो)
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-100 text-slate-700 font-bold text-[11px] sticky top-0 z-10">
+                          <tr>
+                            <th className="p-2 border-b border-slate-200">क्र. / आयडी</th>
+                            <th className="p-2 border-b border-slate-200">गाव व स्त्रोत</th>
+                            <th className="p-2 border-b border-slate-200">पाठवले</th>
+                            <th className="p-2 border-b border-slate-200">निकालाचा शेरा</th>
+                            <th className="p-2 border-b border-slate-200 text-center">काढा</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {selectedBatchSampleIds.map((sampleId) => {
+                            const sample = samples.find((s) => s.id === sampleId);
+                            if (!sample) return null;
+
+                            const override = individualOverrides[sampleId];
+                            const currentResult = override?.result ?? batchCommonResult;
+
+                            return (
+                              <tr key={sample.id} className="hover:bg-slate-50">
+                                <td className="p-2 font-mono font-bold text-slate-900 whitespace-nowrap">
+                                  {sample.id}
+                                  {sample.bottleNumber && (
+                                    <div className="text-[10px] text-slate-500 font-normal">
+                                      बाटली: {sample.bottleNumber}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-2 text-slate-800">
+                                  <div className="font-semibold">{sample.villageName}</div>
+                                  <div className="text-[11px] text-slate-600 truncate max-w-[180px]">
+                                    {sample.sourceName || sample.patientName || sample.shopOrInstitutionName}
+                                  </div>
+                                </td>
+                                <td className="p-2 text-slate-500 text-[11px] whitespace-nowrap">
+                                  {sample.sendingDate || sample.collectionDate}
+                                  {sample.sendingLetterNumber && (
+                                    <div className="font-mono text-[9px] text-emerald-800 truncate max-w-[110px]">
+                                      {sample.sendingLetterNumber}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-2">
+                                  <select
+                                    value={currentResult}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setIndividualOverrides((prev) => ({
+                                        ...prev,
+                                        [sample.id]: {
+                                          ...prev[sample.id],
+                                          result: val,
+                                        },
+                                      }));
+                                    }}
+                                    className={`w-full text-xs font-bold rounded px-1.5 py-1 border ${
+                                      currentResult.includes('अयोग्य') || currentResult.includes('अप्रमाणित')
+                                        ? 'bg-rose-50 border-rose-300 text-rose-800'
+                                        : 'bg-white border-slate-300 text-slate-800'
+                                    }`}
+                                  >
+                                    {getResultOptions(sample).map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+                                <td className="p-2 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleSampleBatchSelection(sample.id)}
+                                    className="text-rose-500 hover:text-rose-700 p-1"
+                                    title="यादीतून काढा"
+                                  >
+                                    ✕
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedBatchSampleIds([]);
+                        setIndividualOverrides({});
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                    >
+                      निवड साफ करा (Clear)
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting || selectedBatchSampleIds.length === 0}
+                      onClick={handleSaveBatchReport}
+                      className="flex items-center gap-2 bg-emerald-800 hover:bg-emerald-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg font-bold text-xs shadow transition-all active:scale-95"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>
+                        {isSubmitting
+                          ? 'जतन करत आहे...'
+                          : `सर्व ${selectedBatchSampleIds.length} नमुन्यांचा अहवाल जतन करा (Save Batch)`}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
+            /* SINGLE REPORT UPDATE FORM */
+            <div>
+              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                  <FileCheck className="w-4 h-4 text-emerald-700" />
+                  <span>एकल प्रयोगशाळा अहवाल तपशील नोंदवा</span>
+                </div>
+                {editingSample && (
+                  <span className="font-mono text-xs font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {editingSample.id}
+                  </span>
+                )}
+              </div>
+
+              {!editingSample ? (
+                <div className="py-16 text-center text-slate-400 space-y-2">
+                  <FileText className="w-10 h-10 mx-auto text-slate-300" />
+                  <div className="font-semibold text-xs text-slate-600">
+                    डाव्या बाजूच्या यादीतून अहवाल अद्ययावत करण्यासाठी नमुना निवडा.
+                  </div>
+                </div>
+              ) : (
             <div className="space-y-4 text-xs">
               {/* Sample Meta Overview */}
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-2 gap-2 text-[11px]">
@@ -790,6 +1269,8 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
                   <span>{isSubmitting ? 'जतन करत आहे...' : 'अहवाल जतन करा (Save Report)'}</span>
                 </button>
               </div>
+            </div>
+          )}
             </div>
           )}
         </div>

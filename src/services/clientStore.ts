@@ -17,6 +17,7 @@ import {
   SubcenterVillageImportRow,
   SubcenterVillageImportSummary,
   PendingSyncOperation,
+  DispatchSampleRecord,
 } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -42,6 +43,7 @@ const STORAGE_KEYS = {
   SOURCES: 'phc_bhada_sources_v2',
   SAMPLES: 'phc_bhada_samples_v2',
   SENDING_LETTERS: 'phc_bhada_letters_v2',
+  DISPATCH_SAMPLES: 'phc_bhada_dispatch_samples_v2',
   AUDIT_LOGS: 'phc_bhada_audit_logs_v2',
   SYNC_QUEUE: 'phc_bhada_sync_queue_v2',
 };
@@ -113,6 +115,18 @@ const DEFAULT_SUBCENTERS: SubcenterMaster[] = [
     subcenterCode: 'LHT',
     subcenterName: 'लोहटा',
     marathiName: 'उपकेंद्र लोहटा',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    isActive: true,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SC-BRG-01',
+    subcenterCode: 'BRG',
+    subcenterName: 'बोरगाव',
+    marathiName: 'उपकेंद्र बोरगाव',
     phcName: 'भादा',
     taluka: 'औसा',
     district: 'लातूर',
@@ -385,6 +399,21 @@ const DEFAULT_VILLAGES: VillageMaster[] = [
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
+  {
+    id: 'VIL-007',
+    name: 'बोरगाव',
+    englishName: 'Borgaon',
+    code: 'BRG',
+    subcenterId: 'SC-BRG-01',
+    subcenterName: 'बोरगाव',
+    subcenter: 'बोरगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    isActive: true,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
 ];
 
 const DEFAULT_SOURCES: SourceMaster[] = [
@@ -541,6 +570,96 @@ const DEFAULT_SOURCES: SourceMaster[] = [
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
+  {
+    id: 'SRC-BHD-005',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'मारुती मंदिर सार्वजनिक विहीर',
+    sourceCode: 'BHD-W02',
+    sourceType: 'विहीर',
+    locationAddress: 'मारुती गल्ली, भादा',
+    isActive: true,
+    remarks: 'सार्वजनिक विहीर',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-BHD-006',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    sampleTypeId: 'ST-002',
+    sampleTypeName: 'Water Sample – Chemical Examination',
+    sourceName: 'प्राथमिक आरोग्य केंद्र टाकी',
+    sourceCode: 'BHD-TK02',
+    sourceType: 'सार्वजनिक टाकी',
+    locationAddress: 'आरोग्य केंद्र परिसर, भादा',
+    isActive: true,
+    remarks: 'रासायनिक तपासणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-LKH-005',
+    villageId: 'VIL-002',
+    villageName: 'लखनगाव',
+    sampleTypeId: 'ST-002',
+    sampleTypeName: 'Water Sample – Chemical Examination',
+    sourceName: 'मुख्य ग्रामपंचायत विहीर',
+    sourceCode: 'LKH-W02',
+    sourceType: 'विहीर',
+    locationAddress: 'मारुती मंदिराशेजारी, लखनगाव',
+    isActive: true,
+    remarks: 'रासायनिक तपासणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-BRG-001',
+    villageId: 'VIL-007',
+    villageName: 'बोरगाव',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
+    sourceCode: 'BRG-W01',
+    sourceType: 'नळ योजना',
+    locationAddress: 'ग्रामपंचायत जवळ, बोरगाव',
+    isActive: true,
+    remarks: 'पिण्याचे पाणी स्त्रोत',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-BRG-002',
+    villageId: 'VIL-007',
+    villageName: 'बोरगाव',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological Examination',
+    sourceName: 'शाळा परिसर हातपंप',
+    sourceCode: 'BRG-HP01',
+    sourceType: 'हातपंप',
+    locationAddress: 'जि.प. शाळा परिसर, बोरगाव',
+    isActive: true,
+    remarks: 'शाळा पिण्याचे पाणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'SRC-BRG-003',
+    villageId: 'VIL-007',
+    villageName: 'बोरगाव',
+    sampleTypeId: 'ST-002',
+    sampleTypeName: 'Water Sample – Chemical Examination',
+    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
+    sourceCode: 'BRG-W02',
+    sourceType: 'नळ योजना',
+    locationAddress: 'ग्रामपंचायत जवळ, बोरगाव',
+    isActive: true,
+    remarks: 'रासायनिक तपासणी',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
 ];
 
 const DEFAULT_SAMPLES: SampleRecord[] = [
@@ -619,6 +738,384 @@ const DEFAULT_SAMPLES: SampleRecord[] = [
     createdAt: '2026-09-18T09:40:00Z',
     updatedBy: 'USR-002',
     updatedAt: '2026-09-18T10:00:00Z',
+    isActive: true,
+  },
+  // Pending Water Samples for Date: 2026-09-22 (Test Scenario & Active Dispatch Workflow)
+  {
+    id: 'WS-BIO-2026-0010',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BHD-01',
+    subcenterName: 'भादा',
+    subcenter: 'भादा',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BHD-001',
+    sourceName: 'मुख्य पाणीपुरवठा नळ योजना विहीर',
+    sourceType: 'नळ योजना',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'BHD-B01',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T08:00:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T08:00:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0011',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BHD-01',
+    subcenterName: 'भादा',
+    subcenter: 'भादा',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BHD-002',
+    sourceName: 'प्राथमिक आरोग्य केंद्र टाकी',
+    sourceType: 'सार्वजनिक टाकी',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'BHD-B02',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T08:15:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T08:15:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0012',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BHD-01',
+    subcenterName: 'भादा',
+    subcenter: 'भादा',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BHD-003',
+    sourceName: 'बस स्टँड जवळील हातपंप',
+    sourceType: 'हातपंप',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'BHD-B03',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T08:30:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T08:30:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0013',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BHD-01',
+    subcenterName: 'भादा',
+    subcenter: 'भादा',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BHD-005',
+    sourceName: 'मारुती मंदिर सार्वजनिक विहीर',
+    sourceType: 'विहीर',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'BHD-B04',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T08:45:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T08:45:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0014',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-LKH-01',
+    subcenterName: 'लखनगाव',
+    subcenter: 'लखनगाव',
+    villageId: 'VIL-002',
+    villageName: 'लखनगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-LKH-001',
+    sourceName: 'मुख्य ग्रामपंचायत विहीर',
+    sourceType: 'विहीर',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'LKH-B03',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T09:00:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T09:00:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0015',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-LKH-01',
+    subcenterName: 'लखनगाव',
+    subcenter: 'लखनगाव',
+    villageId: 'VIL-002',
+    villageName: 'लखनगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-LKH-002',
+    sourceName: 'जि.प. शाळा हातपंप',
+    sourceType: 'हातपंप',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'LKH-B04',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T09:15:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T09:15:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0016',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-LKH-01',
+    subcenterName: 'लखनगाव',
+    subcenter: 'लखनगाव',
+    villageId: 'VIL-002',
+    villageName: 'लखनगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-LKH-003',
+    sourceName: 'सार्वजनिक पाण्याची टाकी',
+    sourceType: 'सार्वजनिक टाकी',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'LKH-B05',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T09:30:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T09:30:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0017',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BRG-01',
+    subcenterName: 'बोरगाव',
+    subcenter: 'बोरगाव',
+    villageId: 'VIL-007',
+    villageName: 'बोरगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BRG-001',
+    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
+    sourceType: 'नळ योजना',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'BRG-B01',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T09:45:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T09:45:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-BIO-2026-0018',
+    sampleTypeId: 'ST-001',
+    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BRG-01',
+    subcenterName: 'बोरगाव',
+    subcenter: 'बोरगाव',
+    villageId: 'VIL-007',
+    villageName: 'बोरगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BRG-002',
+    sourceName: 'शाळा परिसर हातपंप',
+    sourceType: 'हातपंप',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '250 ml',
+    sampleCodeOrBottleNo: 'BRG-B02',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
+    createdAt: '2026-09-22T10:00:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T10:00:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-CHM-2026-0010',
+    sampleTypeId: 'ST-002',
+    sampleTypeName: 'Water Sample – Chemical Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BHD-01',
+    subcenterName: 'भादा',
+    subcenter: 'भादा',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BHD-004',
+    sourceName: 'मुख्य पाणीपुरवठा नळ योजना विहीर',
+    sourceType: 'नळ योजना',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '2 Ltr',
+    sampleCodeOrBottleNo: 'BHD-CHM-02',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक',
+    createdAt: '2026-09-22T08:00:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T08:00:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-CHM-2026-0011',
+    sampleTypeId: 'ST-002',
+    sampleTypeName: 'Water Sample – Chemical Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BHD-01',
+    subcenterName: 'भादा',
+    subcenter: 'भादा',
+    villageId: 'VIL-001',
+    villageName: 'भादा',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BHD-006',
+    sourceName: 'प्राथमिक आरोग्य केंद्र टाकी',
+    sourceType: 'सार्वजनिक टाकी',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '2 Ltr',
+    sampleCodeOrBottleNo: 'BHD-CHM-03',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक',
+    createdAt: '2026-09-22T08:15:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T08:15:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-CHM-2026-0012',
+    sampleTypeId: 'ST-002',
+    sampleTypeName: 'Water Sample – Chemical Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-LKH-01',
+    subcenterName: 'लखनगाव',
+    subcenter: 'लखनगाव',
+    villageId: 'VIL-002',
+    villageName: 'लखनगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-LKH-005',
+    sourceName: 'मुख्य ग्रामपंचायत विहीर',
+    sourceType: 'विहीर',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '2 Ltr',
+    sampleCodeOrBottleNo: 'LKH-CHM-02',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक',
+    createdAt: '2026-09-22T09:00:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T09:00:00Z',
+    isActive: true,
+  },
+  {
+    id: 'WS-CHM-2026-0013',
+    sampleTypeId: 'ST-002',
+    sampleTypeName: 'Water Sample – Chemical Examination',
+    collectionDate: '2026-09-22',
+    subcenterId: 'SC-BRG-01',
+    subcenterName: 'बोरगाव',
+    subcenter: 'बोरगाव',
+    villageId: 'VIL-007',
+    villageName: 'बोरगाव',
+    phcName: 'भादा',
+    taluka: 'औसा',
+    district: 'लातूर',
+    sourceId: 'SRC-BRG-003',
+    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
+    sourceType: 'नळ योजना',
+    sampleCollector: 'श्री. आरोग्य सहाय्यक',
+    sampleQuantity: '2 Ltr',
+    sampleCodeOrBottleNo: 'BRG-CHM-01',
+    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
+    dispatchMode: 'विशेष दूत',
+    status: 'Ready for Dispatch',
+    createdBy: 'USR-002',
+    createdByName: 'श्री. आरोग्य सहाय्यक',
+    createdAt: '2026-09-22T09:45:00Z',
+    updatedBy: 'USR-002',
+    updatedAt: '2026-09-22T09:45:00Z',
     isActive: true,
   },
   {
@@ -1394,6 +1891,7 @@ class ClientDataStore {
   private sources: SourceMaster[] = [];
   private samples: SampleRecord[] = [];
   private sendingLetters: SendingLetter[] = [];
+  private dispatchSamples: DispatchSampleRecord[] = [];
   private auditLogs: AuditLog[] = [];
   private syncQueue: PendingSyncOperation[] = [];
   private listeners: Array<() => void> = [];
@@ -1412,6 +1910,7 @@ class ClientDataStore {
     this.sources = getFromStorage(STORAGE_KEYS.SOURCES, DEFAULT_SOURCES);
     this.samples = getFromStorage(STORAGE_KEYS.SAMPLES, DEFAULT_SAMPLES);
     this.sendingLetters = getFromStorage(STORAGE_KEYS.SENDING_LETTERS, DEFAULT_LETTERS);
+    this.dispatchSamples = getFromStorage(STORAGE_KEYS.DISPATCH_SAMPLES, []);
     this.auditLogs = getFromStorage(STORAGE_KEYS.AUDIT_LOGS, DEFAULT_AUDIT_LOGS);
     this.syncQueue = getFromStorage(STORAGE_KEYS.SYNC_QUEUE, []);
 
@@ -1495,6 +1994,43 @@ class ClientDataStore {
         this.samples.push({ ...defSmp });
         samplesModified = true;
       }
+    }
+
+    // Deduplicate this.samples by unique authoritative id
+    const seenSampleIds = new Set<string>();
+    const uniqueSamples: SampleRecord[] = [];
+    for (const s of this.samples) {
+      if (!seenSampleIds.has(s.id)) {
+        seenSampleIds.add(s.id);
+        uniqueSamples.push(s);
+      } else {
+        samplesModified = true;
+      }
+    }
+    this.samples = uniqueSamples;
+
+    // 2b. Ensure dispatch_samples association records exist with UNIQUE(dispatch_id, sample_id)
+    if (this.dispatchSamples.length === 0 && this.sendingLetters.length > 0) {
+      for (const letter of this.sendingLetters) {
+        if (Array.isArray(letter.sampleIds)) {
+          const uniqueIds = Array.from(new Set(letter.sampleIds));
+          for (const sId of uniqueIds) {
+            const sample = this.samples.find((s) => s.id === sId);
+            this.dispatchSamples.push({
+              id: `DSP-${letter.id}-${sId}`,
+              dispatchId: letter.id,
+              sampleId: sId,
+              sampleTypeId: letter.sampleTypeId,
+              collectionDate: sample?.collectionDate || letter.letterDate,
+              subcenterName: sample?.subcenterName || sample?.subcenter,
+              villageName: sample?.villageName || '',
+              sourceName: sample?.sourceName || sample?.patientName,
+              createdAt: letter.createdAt || new Date().toISOString(),
+            });
+          }
+        }
+      }
+      saveToStorage(STORAGE_KEYS.DISPATCH_SAMPLES, this.dispatchSamples);
     }
 
     // 3. Migrate Samples: assign subcenterId, subcenterName, phcName, taluka, district
@@ -2504,6 +3040,58 @@ class ClientDataStore {
     return candidate;
   }
 
+  /**
+   * Generates the next date-wise automatic Bottle Number for a given collection date.
+   * Requirement 3 & 4:
+   * Bottle Number sequence is independent for each collection date.
+   * Starts from 1 (Bottle No. 1, Bottle No. 2, ...) and continues 1, 2, 3, 4, 5...
+   * Concurrency-safe and duplicate-safe: inspects both in-memory samples and pending sync queue.
+   */
+  getNextBottleNumber(collectionDate: string, sampleTypeId?: string): string {
+    const targetDate = collectionDate || new Date().toISOString().split('T')[0];
+
+    // For water samples (ST-001 / ST-002), sequence is tracked across water samples on that date
+    const isWaterType = !sampleTypeId || sampleTypeId === 'ST-001' || sampleTypeId === 'ST-002';
+
+    const sameDateSamples = this.samples.filter((s) => {
+      if (!s.isActive) return false;
+      if (s.collectionDate !== targetDate) return false;
+      if (isWaterType) {
+        return s.sampleTypeId === 'ST-001' || s.sampleTypeId === 'ST-002';
+      }
+      return sampleTypeId ? s.sampleTypeId === sampleTypeId : true;
+    });
+
+    // Also inspect pending sync queue for samples on the same date
+    const pendingSameDateSamples = this.syncQueue
+      .filter((op) => op.entityType === 'sample' && op.payload && (op.payload as any).collectionDate === targetDate)
+      .map((op) => op.payload as any);
+
+    const allSamplesOnDate = [...sameDateSamples, ...pendingSameDateSamples];
+
+    const usedNumbers = new Set<number>();
+
+    for (const s of allSamplesOnDate) {
+      const btlStr = s.sampleCodeOrBottleNo || '';
+      if (!btlStr) continue;
+      const matches = btlStr.match(/\d+/g);
+      if (matches && matches.length > 0) {
+        const num = parseInt(matches[matches.length - 1], 10);
+        if (!isNaN(num) && num > 0) {
+          usedNumbers.add(num);
+        }
+      }
+    }
+
+    // Starting from 1 and continuing 1, 2, 3, 4, 5...
+    let nextNum = 1;
+    while (usedNumbers.has(nextNum)) {
+      nextNum++;
+    }
+
+    return `Bottle No. ${nextNum}`;
+  }
+
   getSamples(filter?: {
     sampleTypeId?: string;
     subcenterId?: string;
@@ -2512,6 +3100,12 @@ class ClientDataStore {
     status?: string;
     startDate?: string;
     endDate?: string;
+    collectionDate?: string;
+    sendingDate?: string;
+    dispatchDate?: string;
+    sendingLetterNumber?: string;
+    sendingLetterId?: string;
+    reportNumber?: string;
     searchQuery?: string;
     includeInactive?: boolean;
   }): SampleRecord[] {
@@ -2537,12 +3131,36 @@ class ClientDataStore {
       list = list.filter((s) => s.status === filter.status);
     }
 
+    if (filter?.collectionDate && filter.collectionDate !== 'ALL') {
+      list = list.filter((s) => s.collectionDate === filter.collectionDate);
+    }
+
     if (filter?.startDate) {
       list = list.filter((s) => s.collectionDate >= filter.startDate!);
     }
 
     if (filter?.endDate) {
       list = list.filter((s) => s.collectionDate <= filter.endDate!);
+    }
+
+    if (filter?.sendingDate && filter.sendingDate !== 'ALL') {
+      list = list.filter((s) => s.sendingDate === filter.sendingDate || s.dispatchDate === filter.sendingDate);
+    }
+
+    if (filter?.dispatchDate && filter.dispatchDate !== 'ALL') {
+      list = list.filter((s) => s.dispatchDate === filter.dispatchDate || s.sendingDate === filter.dispatchDate);
+    }
+
+    if (filter?.sendingLetterNumber && filter.sendingLetterNumber !== 'ALL') {
+      list = list.filter((s) => s.sendingLetterNumber === filter.sendingLetterNumber);
+    }
+
+    if (filter?.sendingLetterId && filter.sendingLetterId !== 'ALL') {
+      list = list.filter((s) => s.sendingLetterId === filter.sendingLetterId);
+    }
+
+    if (filter?.reportNumber && filter.reportNumber !== 'ALL') {
+      list = list.filter((s) => s.reportNumber === filter.reportNumber);
     }
 
     if (filter?.searchQuery) {
@@ -2557,11 +3175,22 @@ class ClientDataStore {
           (s.patientName && s.patientName.toLowerCase().includes(q)) ||
           (s.sendingLetterNumber && s.sendingLetterNumber.toLowerCase().includes(q)) ||
           (s.reportNumber && s.reportNumber.toLowerCase().includes(q)) ||
+          (s.sampleCodeOrBottleNo && s.sampleCodeOrBottleNo.toLowerCase().includes(q)) ||
           (s.batchNumber && s.batchNumber.toLowerCase().includes(q))
       );
     }
 
-    return list.sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime());
+    // Ensure distinct rows by authoritative sample id
+    const seenIds = new Set<string>();
+    const deduplicatedList: SampleRecord[] = [];
+    for (const item of list) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        deduplicatedList.push(item);
+      }
+    }
+
+    return deduplicatedList.sort((a, b) => new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime());
   }
 
   getSampleById(id: string): SampleRecord | null {
@@ -2631,10 +3260,29 @@ class ClientDataStore {
     const taluka = vil.taluka || (sc ? sc.taluka : 'औसा');
     const district = vil.district || (sc ? sc.district : 'लातूर');
 
+    // Automatic Date-wise Bottle Numbering for Water Samples (ST-001 & ST-002)
+    let sampleCodeOrBottleNo = sampleData.sampleCodeOrBottleNo;
+    const isWaterSample = sampleData.sampleTypeId === 'ST-001' || sampleData.sampleTypeId === 'ST-002';
+    if (isWaterSample) {
+      const targetDate = sampleData.collectionDate || new Date().toISOString().split('T')[0];
+      const isDuplicateOnDate = Boolean(
+        sampleCodeOrBottleNo &&
+        this.samples.some(
+          (s) => s.isActive && s.collectionDate === targetDate && s.sampleCodeOrBottleNo === sampleCodeOrBottleNo
+        )
+      );
+
+      // If empty, random placeholder like BTL-xxx, or duplicate on this date:
+      if (!sampleCodeOrBottleNo || sampleCodeOrBottleNo.startsWith('BTL-') || isDuplicateOnDate) {
+        sampleCodeOrBottleNo = this.getNextBottleNumber(targetDate, sampleData.sampleTypeId);
+      }
+    }
+
     const newSample: SampleRecord = {
       ...sampleData,
       id: newId,
       uuid: internalUuid,
+      ...(sampleCodeOrBottleNo ? { sampleCodeOrBottleNo } : {}),
       subcenterId,
       subcenterName,
       subcenter: subcenterName || sampleData.subcenter || '',
@@ -2744,6 +3392,97 @@ class ClientDataStore {
 
     this.notifyListeners();
     return this.samples[idx];
+  }
+
+  /**
+   * Requirement 5: ONE REPORT REFERENCE FOR MANY SOURCES
+   * Links one Laboratory Report Reference Number to multiple sample records.
+   * Updates the authoritative state of each selected sample.
+   */
+  updateBatchSampleReports(
+    sampleIds: string[],
+    commonReport: {
+      reportNumber: string;
+      reportReceivedDate: string;
+      laboratoryName?: string;
+      result?: string;
+      reportRemarks?: string;
+      resultQuantitative?: Record<string, string | number>;
+    },
+    individualOverrides?: Record<
+      string,
+      {
+        result?: string;
+        reportRemarks?: string;
+        resultQuantitative?: Record<string, string | number>;
+      }
+    >
+  ): SampleRecord[] {
+    const user = this.getCurrentUser();
+    const updatedSamples: SampleRecord[] = [];
+    const now = new Date().toISOString();
+    const today = now.split('T')[0];
+
+    for (const id of sampleIds) {
+      const idx = this.samples.findIndex((s) => s.id === id);
+      if (idx === -1) continue;
+
+      const override = individualOverrides ? individualOverrides[id] : undefined;
+      const finalResult = override?.result || commonReport.result || this.samples[idx].result || 'पिण्यास योग्य';
+      const finalRemarks = override?.reportRemarks || commonReport.reportRemarks || this.samples[idx].reportRemarks || '';
+      const finalQuant = {
+        ...(commonReport.resultQuantitative || {}),
+        ...(override?.resultQuantitative || {}),
+      };
+
+      const oldData = { ...this.samples[idx] };
+
+      this.samples[idx] = {
+        ...this.samples[idx],
+        reportNumber: commonReport.reportNumber,
+        reportReceivedDate: commonReport.reportReceivedDate,
+        reportDate: commonReport.reportReceivedDate,
+        reportUpdateDate: today,
+        laboratoryName: commonReport.laboratoryName || this.samples[idx].laboratoryName,
+        result: finalResult,
+        reportRemarks: finalRemarks,
+        resultQuantitative: Object.keys(finalQuant).length > 0 ? finalQuant : this.samples[idx].resultQuantitative,
+        status: 'Report Received',
+        syncStatus: 'PENDING_SYNC',
+        updatedBy: user.id,
+        updatedByName: user.name,
+        updatedAt: now,
+      };
+
+      updatedSamples.push(this.samples[idx]);
+
+      // Enqueue sync operation
+      const syncOp: PendingSyncOperation = {
+        localId: `OP-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        operationType: 'UPDATE',
+        entityType: 'sample',
+        entityId: id,
+        payload: this.samples[idx] as unknown as Record<string, unknown>,
+        createdTime: now,
+        syncStatus: 'PENDING',
+        retryCount: 0,
+        idempotencyKey: `sample_batch_report_${id}_${commonReport.reportNumber}_${Date.now()}`,
+      };
+      this.enqueueSyncOperation(syncOp);
+
+      this.logAudit({
+        action: 'REPORT_UPDATE',
+        tableName: 'samples',
+        recordId: id,
+        summary: `एकत्रित अहवाल संदर्भ क्र. ${commonReport.reportNumber} जोडला (${this.samples[idx].villageName} - ${this.samples[idx].sourceName || id}), निकाल: ${finalResult}`,
+        oldData: oldData as unknown as Record<string, unknown>,
+        newData: this.samples[idx] as unknown as Record<string, unknown>,
+      });
+    }
+
+    saveToStorage(STORAGE_KEYS.SAMPLES, this.samples);
+    this.notifyListeners();
+    return updatedSamples;
   }
 
   softDeleteSample(id: string, reason?: string): { success: boolean; message: string } {
@@ -2859,11 +3598,35 @@ class ClientDataStore {
     letterData: Omit<SendingLetter, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>
   ): SendingLetter {
     const user = this.getCurrentUser();
+
+    // 1. Enforce deduplication by authoritative sample_id
+    const uniqueSampleIds = Array.from(new Set((letterData.sampleIds || []).filter(Boolean)));
+    if (uniqueSampleIds.length === 0) {
+      throw new Error('पत्रात जोडण्यासाठी किमान एक वैध नमुना निवडणे आवश्यक आहे.');
+    }
+
+    // 2. Validate eligibility and prevent double dispatch
+    for (const sampleId of uniqueSampleIds) {
+      const sample = this.samples.find((s) => s.id === sampleId && s.isActive);
+      if (!sample) {
+        throw new Error(`नमुना आयडी '${sampleId}' सिस्टीममध्ये उपलब्ध नाही.`);
+      }
+      if (sample.status === 'Dispatched' && sample.sendingLetterNumber) {
+        throw new Error(
+          `नमुना '${sampleId}' (${sample.sourceName || sample.villageName}) आधीच जावक पत्र क्र. ${sample.sendingLetterNumber} मध्ये पाठवला गेला आहे. दुहेरी पाठवणी अनुमत नाही.`
+        );
+      }
+    }
+
     const newId = `LTR-${new Date().getFullYear()}-${String(this.sendingLetters.length + 1).padStart(4, '0')}`;
 
     const newLetter: SendingLetter = {
       ...letterData,
       id: newId,
+      sampleIds: uniqueSampleIds,
+      sampleCount: uniqueSampleIds.length,
+      dispatchDate: letterData.letterDate,
+      dispatchStatus: 'Dispatched',
       createdBy: user.id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -2872,8 +3635,9 @@ class ClientDataStore {
     this.sendingLetters.unshift(newLetter);
     saveToStorage(STORAGE_KEYS.SENDING_LETTERS, this.sendingLetters);
 
-    // Link each sample permanently to this letter & update sendingDate + status
-    for (const sampleId of newLetter.sampleIds) {
+    // 3. Link each sample permanently to this letter & update sendingDate + status
+    // and maintain dispatch_samples association with strict UNIQUE(dispatch_id, sample_id)
+    for (const sampleId of uniqueSampleIds) {
       const idx = this.samples.findIndex((s) => s.id === sampleId);
       if (idx !== -1) {
         this.samples[idx].sendingLetterId = newLetter.id;
@@ -2882,15 +3646,39 @@ class ClientDataStore {
         this.samples[idx].dispatchDate = this.samples[idx].dispatchDate || newLetter.letterDate;
         this.samples[idx].laboratoryName = newLetter.laboratoryName;
         this.samples[idx].dispatchMode = newLetter.dispatchMode;
-        if (this.samples[idx].status === 'Collected' || this.samples[idx].status === 'Ready for Dispatch') {
+        if (
+          this.samples[idx].status === 'Collected' ||
+          this.samples[idx].status === 'Ready for Dispatch' ||
+          this.samples[idx].status === 'Draft'
+        ) {
           this.samples[idx].status = 'Dispatched';
         }
         this.samples[idx].updatedBy = user.id;
         this.samples[idx].updatedByName = user.name;
         this.samples[idx].updatedAt = new Date().toISOString();
       }
+
+      // Enforce UNIQUE(dispatch_id, sample_id)
+      const existingAssoc = this.dispatchSamples.find(
+        (ds) => ds.dispatchId === newLetter.id && ds.sampleId === sampleId
+      );
+      if (!existingAssoc) {
+        const sampleRecord = idx !== -1 ? this.samples[idx] : null;
+        this.dispatchSamples.push({
+          id: `DSP-${newLetter.id}-${sampleId}`,
+          dispatchId: newLetter.id,
+          sampleId,
+          sampleTypeId: newLetter.sampleTypeId,
+          collectionDate: sampleRecord?.collectionDate || newLetter.letterDate,
+          subcenterName: sampleRecord?.subcenterName || sampleRecord?.subcenter,
+          villageName: sampleRecord?.villageName || '',
+          sourceName: sampleRecord?.sourceName || sampleRecord?.patientName,
+          createdAt: new Date().toISOString(),
+        });
+      }
     }
     saveToStorage(STORAGE_KEYS.SAMPLES, this.samples);
+    saveToStorage(STORAGE_KEYS.DISPATCH_SAMPLES, this.dispatchSamples);
 
     this.logAudit({
       action: 'DISPATCH',
@@ -2916,6 +3704,22 @@ class ClientDataStore {
 
     this.notifyListeners();
     return newLetter;
+  }
+
+  getDispatchSamples(dispatchId?: string): DispatchSampleRecord[] {
+    if (dispatchId) {
+      return this.dispatchSamples.filter((ds) => ds.dispatchId === dispatchId);
+    }
+    return [...this.dispatchSamples];
+  }
+
+  isSampleDispatched(sampleId: string): boolean {
+    const s = this.samples.find((item) => item.id === sampleId);
+    if (!s) return false;
+    if (s.status === 'Dispatched' || Boolean(s.sendingLetterNumber) || Boolean(s.sendingLetterId)) {
+      return true;
+    }
+    return this.dispatchSamples.some((ds) => ds.sampleId === sampleId);
   }
 
   // ==========================================

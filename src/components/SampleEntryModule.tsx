@@ -179,8 +179,20 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
     }
   }, [currentSampleType]);
 
+  // Date-wise automatic Bottle Numbering for Water Biological (ST-001) & Chemical (ST-002)
+  useEffect(() => {
+    if (selectedTypeId === 'ST-001' || selectedTypeId === 'ST-002') {
+      const autoBottleNo = clientStore.getNextBottleNumber(collectionDate, selectedTypeId);
+      setSampleCodeOrBottleNo(autoBottleNo);
+    }
+  }, [collectionDate, selectedTypeId]);
+
   const resetForm = () => {
-    setSampleCodeOrBottleNo('');
+    if (selectedTypeId === 'ST-001' || selectedTypeId === 'ST-002') {
+      setSampleCodeOrBottleNo(clientStore.getNextBottleNumber(collectionDate, selectedTypeId));
+    } else {
+      setSampleCodeOrBottleNo('');
+    }
     setRemarks('');
     setShopOrInstitutionName('');
     setBatchNumber('');
@@ -290,7 +302,7 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
               sourceType: selectedSource?.sourceType || 'विहीर',
               sampleCollector,
               sampleQuantity,
-              sampleCodeOrBottleNo: sampleCodeOrBottleNo || `BTL-${Math.floor(Math.random() * 900 + 100)}`,
+              sampleCodeOrBottleNo: sampleCodeOrBottleNo || clientStore.getNextBottleNumber(collectionDate, selectedTypeId),
             }
           : {}),
         // Salt
@@ -697,16 +709,24 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
 
               {/* Sample Bottle No */}
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">
-                  बाटली क्रमांक / कोड (Bottle No)*:
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-800">
+                    बाटली क्रमांक / कोड (Bottle No)*:
+                  </label>
+                  <span className="text-[10px] font-bold bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded border border-cyan-200">
+                    दिनांकनिहाय स्वयंचलित (Auto)
+                  </span>
+                </div>
                 <input
                   type="text"
-                  placeholder="उदा. BTL-01 / LKH-01"
+                  placeholder="उदा. Bottle No. 1"
                   value={sampleCodeOrBottleNo}
                   onChange={(e) => setSampleCodeOrBottleNo(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-semibold text-slate-800 focus:ring-2 focus:ring-cyan-600 focus:outline-none"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-cyan-950 focus:bg-white focus:ring-2 focus:ring-cyan-600 focus:outline-none"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  सदर संकलन दिनांकासाठी अनुक्रमांक १ पासून स्वयंचलित सुरू होते. जुना नोंद क्रमांक असल्यास बदलू शकता.
+                </p>
               </div>
 
               {/* Sample Collector */}
