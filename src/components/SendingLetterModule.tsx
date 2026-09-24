@@ -37,25 +37,49 @@ import { DengueDocumentationModule } from './DengueDocumentationModule';
 
 interface SendingLetterModuleProps {
   currentUser: User;
+  initialFilter?: {
+    sampleTypeId?: string;
+    villageId?: string;
+    subcenterId?: string;
+  };
+  onNavigate?: (tab: string, filter?: Record<string, string>) => void;
+  onBack?: () => void;
 }
 
-export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({ currentUser }) => {
+export const SendingLetterModule: React.FC<SendingLetterModuleProps> = ({
+  currentUser,
+  initialFilter,
+  onNavigate,
+  onBack,
+}) => {
   const sampleTypes = clientStore.getSampleTypes();
   const subcenters = clientStore.getSubcenters();
   const villages = clientStore.getVillages();
   const sources = clientStore.getSources();
 
   const [activeTabMode, setActiveTabMode] = useState<'STANDARD' | 'DENGUE'>('STANDARD');
-  const [selectedTypeId, setSelectedTypeId] = useState<string>(sampleTypes[0]?.id || 'ST-001');
+  const [selectedTypeId, setSelectedTypeId] = useState<string>(initialFilter?.sampleTypeId || sampleTypes[0]?.id || 'ST-001');
   const [selectedSampleIds, setSelectedSampleIds] = useState<string[]>([]);
 
   // Multi-Centre / Multi-Village / Multi-Source Dispatch Filters
   const [filterCollectionDate, setFilterCollectionDate] = useState<string>('');
-  const [filterSubcenterId, setFilterSubcenterId] = useState<string>('ALL');
-  const [filterVillageId, setFilterVillageId] = useState<string>('ALL');
+  const [filterSubcenterId, setFilterSubcenterId] = useState<string>(initialFilter?.subcenterId || 'ALL');
+  const [filterVillageId, setFilterVillageId] = useState<string>(initialFilter?.villageId || 'ALL');
   const [filterSourceId, setFilterSourceId] = useState<string>('ALL');
   const [filterDispatchStatus, setFilterDispatchStatus] = useState<'PENDING' | 'DISPATCHED' | 'ALL'>('PENDING');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  React.useEffect(() => {
+    if (initialFilter?.sampleTypeId) {
+      setSelectedTypeId(initialFilter.sampleTypeId);
+    }
+    if (initialFilter?.villageId) {
+      setFilterVillageId(initialFilter.villageId);
+    }
+    if (initialFilter?.subcenterId) {
+      setFilterSubcenterId(initialFilter.subcenterId);
+    }
+  }, [initialFilter]);
 
   // Letter Fields
   const [letterNumber, setLetterNumber] = useState<string>(

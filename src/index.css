@@ -3,15 +3,15 @@
 @layer utilities {
   @media print {
     @page {
-      size: A4 portrait;
-      margin: 12mm 15mm 15mm 15mm;
+      size: A4 auto;
+      margin: 10mm 12mm 12mm 12mm;
     }
 
     body {
       background: white !important;
       color: black !important;
-      font-size: 11pt;
-      line-height: 1.4;
+      font-size: 10pt;
+      line-height: 1.35;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
@@ -22,8 +22,42 @@
     aside,
     button,
     .print\:hidden,
-    #root > div > nav {
+    #root > div > nav,
+    #root > div > footer {
       display: none !important;
+    }
+
+    .print\:landscape-page {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    .print\:portrait-page {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    table {
+      page-break-inside: auto !important;
+      border-collapse: collapse !important;
+    }
+
+    tr {
+      page-break-inside: avoid !important;
+      page-break-after: auto !important;
+    }
+
+    thead {
+      display: table-header-group !important;
+    }
+
+    tfoot {
+      display: table-footer-group !important;
+    }
+
+    .break-inside-avoid {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
 
     .a4-print-page {

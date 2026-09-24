@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   AlertCircle,
   FileSpreadsheet,
+  FileText,
   Droplets,
   TestTube,
   Sparkles,
@@ -33,20 +34,31 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react';
+import { OfficialReportPdfModal, PdfTableColumn } from './OfficialReportPdfModal';
 
 interface MasterRegisterModuleProps {
   currentUser: User;
   initialFilter?: {
     sampleTypeId?: string;
     villageId?: string;
+    subcenterId?: string;
+    statusFilter?: string;
+    resultFilter?: string;
+    fromDate?: string;
+    toDate?: string;
+    searchQuery?: string;
   };
   onEditSample?: (sample: SampleRecord) => void;
+  onNavigate?: (tab: string, filter?: Record<string, string>) => void;
+  onBack?: () => void;
 }
 
 export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
   currentUser,
   initialFilter,
   onEditSample,
+  onNavigate,
+  onBack,
 }) => {
   const sampleTypes = clientStore.getSampleTypes();
   const villages = clientStore.getVillages();
@@ -55,23 +67,40 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
   const [activeTypeId, setActiveTypeId] = useState<string>(
     initialFilter?.sampleTypeId || sampleTypes[0]?.id || 'ST-001'
   );
-  const [selectedSubcenterId, setSelectedSubcenterId] = useState<string>('ALL');
+  const [selectedSubcenterId, setSelectedSubcenterId] = useState<string>(
+    initialFilter?.subcenterId || 'ALL'
+  );
   const [selectedVillageId, setSelectedVillageId] = useState<string>(
     initialFilter?.villageId || 'ALL'
   );
   const [selectedSourceId, setSelectedSourceId] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [resultFilter, setResultFilter] = useState<string>('ALL');
-  const [fromDate, setFromDate] = useState<string>('');
-  const [toDate, setToDate] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>(initialFilter?.searchQuery || '');
+  const [statusFilter, setStatusFilter] = useState<string>(initialFilter?.statusFilter || 'ALL');
+  const [resultFilter, setResultFilter] = useState<string>(initialFilter?.resultFilter || 'ALL');
+  const [fromDate, setFromDate] = useState<string>(initialFilter?.fromDate || '');
+  const [toDate, setToDate] = useState<string>(initialFilter?.toDate || '');
   const [includeInactive, setIncludeInactive] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [sortField, setSortField] = useState<'collectionDate' | 'id' | 'villageName' | 'reportReceivedDate'>('collectionDate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
+  // React to initialFilter updates from navigation
+  React.useEffect(() => {
+    if (initialFilter) {
+      if (initialFilter.sampleTypeId) setActiveTypeId(initialFilter.sampleTypeId);
+      if (initialFilter.villageId) setSelectedVillageId(initialFilter.villageId);
+      if (initialFilter.subcenterId) setSelectedSubcenterId(initialFilter.subcenterId);
+      if (initialFilter.statusFilter) setStatusFilter(initialFilter.statusFilter);
+      if (initialFilter.resultFilter) setResultFilter(initialFilter.resultFilter);
+      if (initialFilter.fromDate !== undefined) setFromDate(initialFilter.fromDate);
+      if (initialFilter.toDate !== undefined) setToDate(initialFilter.toDate);
+      if (initialFilter.searchQuery !== undefined) setSearchQuery(initialFilter.searchQuery);
+    }
+  }, [initialFilter]);
+
   // Selected sample for detailed view modal
   const [viewingSample, setViewingSample] = useState<SampleRecord | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
 
   const currentSampleType = sampleTypes.find((t) => t.id === activeTypeId) || sampleTypes[0];
 
@@ -367,10 +396,18 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsPdfModalOpen(true)}
+              className="flex items-center gap-1.5 bg-rose-700 hover:bg-rose-800 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow transition-all active:scale-95 cursor-pointer"
+              title="अधिकृत शासकीय नमुना अहवाल PDF स्वरूपात जनरेट व डाऊनलोड करा"
+            >
+              <FileText className="w-4 h-4 text-rose-200" />
+              <span>शासकीय अहवाल PDF</span>
+            </button>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-1.5 bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-2 rounded-lg text-xs font-bold shadow transition-all active:scale-95"
+              className="flex items-center gap-1.5 bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-2 rounded-lg text-xs font-bold shadow transition-all active:scale-95 cursor-pointer"
               title="अधिकृत शासकीय Excel (.xls) स्वरूपात डाऊनलोड करा"
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -378,7 +415,7 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
             </button>
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xs transition-all active:scale-95"
+              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
               title="CSV स्वरूपात डाऊनलोड करा"
             >
               <Download className="w-4 h-4 text-slate-600" />
@@ -386,10 +423,10 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow transition-all active:scale-95"
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow transition-all active:scale-95 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>नोंदवही प्रिंट करा (Print Register)</span>
+              <span>नोंदवही प्रिंट करा</span>
             </button>
           </div>
         </div>
@@ -1282,6 +1319,199 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
           </div>
         </div>
       )}
+
+      {/* Official PDF Export Modal */}
+      <OfficialReportPdfModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        reportTitle={`अधिकृत नमुना नोंदवही अहवाल (${currentSampleType?.marathiName || 'सर्व नमुने'})`}
+        reportSubtitle="प्राथमिक आरोग्य केंद्र भादा, ता. औसा, जि. लातूर — सार्वजनिक आरोग्य विभाग"
+        periodText={
+          fromDate || toDate
+            ? `${fromDate || 'सुरुवातीपासून'} ते ${toDate || 'आजपर्यंत'}`
+            : 'सर्व उपलब्ध नोंदी'
+        }
+        filterDetails={[
+          { label: 'नमुना प्रकार', value: currentSampleType?.marathiName || 'सर्व' },
+          {
+            label: 'उपकेंद्र',
+            value:
+              selectedSubcenterId === 'ALL'
+                ? 'सर्व उपकेंद्रे'
+                : subcenters.find((s) => s.id === selectedSubcenterId)?.subcenterName || selectedSubcenterId,
+          },
+          {
+            label: 'गाव',
+            value:
+              selectedVillageId === 'ALL'
+                ? 'सर्व गावे'
+                : villages.find((v) => v.id === selectedVillageId)?.name || selectedVillageId,
+          },
+          { label: 'स्थिती', value: statusFilter === 'ALL' ? 'सर्व' : statusFilter },
+          { label: 'निकाल', value: resultFilter === 'ALL' ? 'सर्व' : resultFilter },
+        ]}
+        summaryStats={[
+          { label: 'एकूण नमुने', value: sortedSamples.length, colorClass: 'text-slate-900' },
+          {
+            label: 'अहवाल प्राप्त',
+            value: sortedSamples.filter(
+              (s) => s.status === 'Report Received' || s.status === 'Report Updated'
+            ).length,
+            colorClass: 'text-emerald-700',
+          },
+          {
+            label: 'प्रमाणित / योग्य',
+            value: sortedSamples.filter(
+              (s) =>
+                s.result &&
+                (s.result.includes('योग्य') ||
+                  s.result.includes('प्रमाणित') ||
+                  s.result === 'निगेटिव्ह')
+            ).length,
+            colorClass: 'text-blue-700',
+          },
+          {
+            label: 'अप्रमाणित / अयोग्य',
+            value: sortedSamples.filter(
+              (s) =>
+                s.result &&
+                (s.result.includes('अयोग्य') ||
+                  s.result.includes('अप्रमाणित') ||
+                  s.result === 'पॉझिटिव्ह')
+            ).length,
+            colorClass: 'text-rose-700',
+          },
+          {
+            label: 'अहवाल प्रलंबित',
+            value: sortedSamples.filter(
+              (s) => s.status !== 'Report Received' && s.status !== 'Report Updated'
+            ).length,
+            colorClass: 'text-amber-700',
+          },
+        ]}
+        orientationDefault="landscape"
+        currentUser={currentUser}
+        columns={[
+          {
+            header: 'नमुना आयडी',
+            accessor: 'id',
+            width: '80px',
+            align: 'center',
+            render: (row) => (
+              <span className="font-mono font-bold text-emerald-950">{row.id}</span>
+            ),
+          },
+          {
+            header: 'गाव व उपकेंद्र',
+            width: '130px',
+            render: (row) => (
+              <div>
+                <div className="font-bold text-slate-900">{row.villageName}</div>
+                <div className="text-[9px] text-slate-500">
+                  {row.subcenterName || row.subcenter || '—'}
+                </div>
+              </div>
+            ),
+          },
+          {
+            header: 'स्त्रोत / रुग्ण / आस्थापना',
+            width: '160px',
+            render: (row) => (
+              <div>
+                <div className="font-semibold text-slate-900">
+                  {row.sourceName ||
+                    row.patientName ||
+                    row.shopOrInstitutionName ||
+                    row.sourceType ||
+                    '—'}
+                </div>
+                {row.sourceLocation && (
+                  <div className="text-[9px] text-slate-500 truncate">{row.sourceLocation}</div>
+                )}
+              </div>
+            ),
+          },
+          {
+            header: 'बाटली / बॅच क्र.',
+            width: '90px',
+            align: 'center',
+            render: (row) => (
+              <span className="font-mono text-slate-700">
+                {row.bottleNumber || row.sampleCodeOrBottleNo || row.batchNumber || '—'}
+              </span>
+            ),
+          },
+          {
+            header: 'संकलन दिनांक',
+            accessor: 'collectionDate',
+            width: '85px',
+            align: 'center',
+          },
+          {
+            header: 'जावक पत्र क्र. व दिनांक',
+            width: '130px',
+            render: (row) => (
+              <div className="text-[10px]">
+                <div className="font-semibold text-slate-800">
+                  {row.sendingLetterNumber || '—'}
+                </div>
+                {row.dispatchDate && (
+                  <div className="text-[9px] text-slate-500">दि. {row.dispatchDate}</div>
+                )}
+              </div>
+            ),
+          },
+          {
+            header: 'प्रयोगशाळा निकाल',
+            width: '130px',
+            align: 'center',
+            render: (row) => {
+              if (!row.result) {
+                return <span className="text-amber-700 font-medium">प्रलंबित</span>;
+              }
+              const isFit =
+                row.result.includes('योग्य') ||
+                row.result.includes('प्रमाणित') ||
+                row.result === 'निगेटिव्ह';
+              return (
+                <span
+                  className={`font-bold px-1.5 py-0.5 rounded text-[10px] ${
+                    isFit
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                      : 'bg-rose-50 text-rose-800 border border-rose-300'
+                  }`}
+                >
+                  {row.result}
+                </span>
+              );
+            },
+          },
+          {
+            header: 'अहवाल क्र. व प्राप्ती दिनांक',
+            width: '120px',
+            render: (row) => (
+              <div className="text-[10px]">
+                <div className="font-medium text-slate-800">{row.reportNumber || '—'}</div>
+                {row.reportReceivedDate && (
+                  <div className="text-[9px] text-slate-500">दि. {row.reportReceivedDate}</div>
+                )}
+              </div>
+            ),
+          },
+          {
+            header: 'स्थिती',
+            accessor: 'status',
+            width: '90px',
+            align: 'center',
+            render: (row) => (
+              <span className="text-[9px] font-bold text-slate-700 uppercase">
+                {row.status}
+              </span>
+            ),
+          },
+        ]}
+        data={sortedSamples}
+      />
     </div>
   );
 };

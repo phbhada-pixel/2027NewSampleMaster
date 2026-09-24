@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { WaterBiologicalOverdueReportView } from './WaterBiologicalOverdueReportView';
 import { MonthlySubcenterWaterPlanView } from './MonthlySubcenterWaterPlanView';
+import { OfficialReportPdfModal, PdfTableColumn } from './OfficialReportPdfModal';
 
 interface MonthlySampleReportModuleProps {
   currentUser: User;
@@ -185,6 +186,7 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
   // Drill-down Modal State
   const [drillDown, setDrillDown] = useState<DrillDownContext | null>(null);
   const [drillSearchQuery, setDrillSearchQuery] = useState<string>('');
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
 
   // Cascading Filter: Subcenter -> Village
   const availableVillages = useMemo(() => {
@@ -527,6 +529,232 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
     progressiveAggregates,
   ]);
 
+  // PDF Configuration Builder for Official Government Health Report
+  const pdfDataConfig = useMemo(() => {
+    const isProgressivePeriod =
+      activeTab === 'progressive' ||
+      (activeTab === 'consolidated' && consolidatedTimeframe === 'progressive');
+    const activeDataset = isProgressivePeriod ? progressiveSamples : monthlySamples;
+    const totals = aggregateCounts(activeDataset);
+    const periodLabel = isProgressivePeriod
+      ? `${progressiveStartName} ते ${monthName} ${selectedYear}`
+      : `${monthName} ${selectedYear}`;
+
+    let title = 'मासिक नमुना अहवाल व प्रयोगशाळा निकाल विवरण';
+    const subtitle = 'प्राथमिक आरोग्य केंद्र भादा, ता. औसा, जि. लातूर — सार्वजनिक आरोग्य विभाग';
+    let columns: PdfTableColumn[] = [];
+    let rows: any[] = [];
+    const orientation: 'portrait' | 'landscape' = 'landscape';
+
+    const filterDetails = [
+      { label: 'कालावधी', value: periodLabel },
+      { label: 'वर्ष', value: `${selectedYear}` },
+      {
+        label: 'उपकेंद्र',
+        value:
+          selectedSubcenterId === 'ALL'
+            ? 'सर्व उपकेंद्रे'
+            : subcenters.find((s) => s.id === selectedSubcenterId)?.subcenterName || selectedSubcenterId,
+      },
+      {
+        label: 'गाव',
+        value:
+          selectedVillageId === 'ALL'
+            ? 'सर्व गावे'
+            : villages.find((v) => v.id === selectedVillageId)?.name || selectedVillageId,
+      },
+      {
+        label: 'नमुना प्रकार',
+        value:
+          selectedTypeId === 'ALL'
+            ? 'सर्व प्रकार'
+            : sampleTypes.find((t) => t.id === selectedTypeId)?.marathiName || selectedTypeId,
+      },
+      {
+        label: 'निकाल वर्गवारी',
+        value:
+          resultFilter === 'ALL'
+            ? 'सर्व'
+            : getResultCategoryLabel(resultFilter as ResultCategory),
+      },
+    ];
+
+    const passPercent =
+      totals.total > 0 && totals.certified + totals.uncertified > 0
+        ? Math.round((totals.certified / (totals.certified + totals.uncertified)) * 100)
+        : 0;
+
+    const summaryStats = [
+      { label: 'एकूण नमुने', value: totals.total, colorClass: 'text-slate-900' },
+      { label: 'निकाल अप्राप्त (Pending)', value: totals.pending, colorClass: 'text-amber-700' },
+      { label: 'प्रमाणित / योग्य (Fit)', value: totals.certified, colorClass: 'text-emerald-700' },
+      { label: 'अप्रमाणित / अयोग्य (Unfit)', value: totals.uncertified, colorClass: 'text-rose-700' },
+      { label: 'गुणवत्ता / पास %', value: `${passPercent}%`, colorClass: 'text-blue-700' },
+    ];
+
+    if (activeTab === 'subcenter') {
+      title = `उपकेंद्रनिहाय नमुना संकलन व गुणवत्ता अहवाल (${periodLabel})`;
+      columns = [
+        { header: 'उपकेंद्र नाव', accessor: 'subcenterName', width: '160px' },
+        { header: 'गावे संख्या', accessor: 'villagesCount', align: 'center', width: '90px' },
+        { header: 'एकूण नमुने', accessor: 'total', align: 'center', width: '90px' },
+        { header: 'अप्राप्त (Pending)', accessor: 'pending', align: 'center', width: '110px' },
+        { header: 'प्रमाणित (Fit)', accessor: 'certified', align: 'center', width: '100px' },
+        { header: 'अप्रमाणित (Unfit)', accessor: 'uncertified', align: 'center', width: '110px' },
+        { header: 'प्रमाणित टक्केवारी (%)', accessor: 'percentage', align: 'center', width: '130px' },
+      ];
+      rows = subcenterReportData.map((d) => {
+        const tested = d.counts.certified + d.counts.uncertified;
+        const pct = tested > 0 ? `${Math.round((d.counts.certified / tested) * 100)}%` : '—';
+        return {
+          subcenterName: d.subcenter.subcenterName,
+          villagesCount: d.villagesCount,
+          total: d.counts.total,
+          pending: d.counts.pending,
+          certified: d.counts.certified,
+          uncertified: d.counts.uncertified,
+          percentage: pct,
+        };
+      });
+    } else if (activeTab === 'village') {
+      title = `गावनिहाय नमुना संकलन व तपासणी अहवाल (${periodLabel})`;
+      columns = [
+        { header: 'गाव नाव', accessor: 'villageName', width: '150px' },
+        { header: 'उपकेंद्र', accessor: 'subcenterName', width: '130px' },
+        { header: 'एकूण नमुने', accessor: 'total', align: 'center', width: '80px' },
+        { header: 'अप्राप्त (Pending)', accessor: 'pending', align: 'center', width: '100px' },
+        { header: 'प्रमाणित (Fit)', accessor: 'certified', align: 'center', width: '90px' },
+        { header: 'अप्रमाणित (Unfit)', accessor: 'uncertified', align: 'center', width: '100px' },
+        { header: 'गुणवत्ता %', accessor: 'percentage', align: 'center', width: '90px' },
+      ];
+      rows = villageReportData.map((d) => {
+        const tested = d.counts.certified + d.counts.uncertified;
+        const pct = tested > 0 ? `${Math.round((d.counts.certified / tested) * 100)}%` : '—';
+        return {
+          villageName: d.village.name,
+          subcenterName: d.subcenter.subcenterName,
+          total: d.counts.total,
+          pending: d.counts.pending,
+          certified: d.counts.certified,
+          uncertified: d.counts.uncertified,
+          percentage: pct,
+        };
+      });
+    } else if (activeTab === 'consolidated') {
+      title = `एकत्रित सर्व नमुना प्रकार मॅट्रिक्स अहवाल (${periodLabel})`;
+      columns = [
+        { header: 'गाव', accessor: 'villageName', width: '120px' },
+        { header: 'उपकेंद्र', accessor: 'subcenterName', width: '100px' },
+        { header: 'पाणी (जैविक)', accessor: 'waterBioCount', align: 'center', width: '75px' },
+        { header: 'पाणी (रसायन)', accessor: 'waterChemCount', align: 'center', width: '75px' },
+        { header: 'मीठ (SLT)', accessor: 'saltCount', align: 'center', width: '65px' },
+        { header: 'टीसीएल (TCL)', accessor: 'tclCount', align: 'center', width: '65px' },
+        { header: 'गोवर (MSL)', accessor: 'measlesCount', align: 'center', width: '65px' },
+        { header: 'डेंग्यू (DNG)', accessor: 'dengueCount', align: 'center', width: '65px' },
+        { header: 'एकूण', accessor: 'total', align: 'center', width: '60px' },
+        { header: 'प्रमाणित', accessor: 'certified', align: 'center', width: '65px' },
+        { header: 'अप्रमाणित', accessor: 'uncertified', align: 'center', width: '65px' },
+        { header: 'अप्राप्त', accessor: 'pending', align: 'center', width: '65px' },
+      ];
+      rows = consolidatedMatrix.map((d) => ({
+        villageName: d.village.name,
+        subcenterName: d.subcenter.subcenterName,
+        waterBioCount: d.waterBioCount,
+        waterChemCount: d.waterChemCount,
+        saltCount: d.saltCount,
+        tclCount: d.tclCount,
+        measlesCount: d.measlesCount,
+        dengueCount: d.dengueCount,
+        total: d.counts.total,
+        certified: d.counts.certified,
+        uncertified: d.counts.uncertified,
+        pending: d.counts.pending,
+      }));
+    } else if (activeTab === 'trend') {
+      title = `वार्षिक नमुना कल व तुलनात्मक प्रगती अहवाल (एप्रिल ते मार्च ${selectedYear})`;
+      columns = [
+        { header: 'महिना', accessor: 'monthName', width: '130px' },
+        { header: 'संकलित नमुने', accessor: 'monthlyTotal', align: 'center', width: '90px' },
+        { header: 'अप्राप्त (Pending)', accessor: 'pending', align: 'center', width: '100px' },
+        { header: 'प्रमाणित (Fit)', accessor: 'certified', align: 'center', width: '90px' },
+        { header: 'अप्रमाणित (Unfit)', accessor: 'uncertified', align: 'center', width: '100px' },
+        { header: 'प्रोग्रेसिव्ह एकूण', accessor: 'cumulativeTotal', align: 'center', width: '110px' },
+        { header: 'गुणवत्ता %', accessor: 'percentage', align: 'center', width: '90px' },
+      ];
+      rows = monthlyTrendData.map((d) => {
+        const tested = d.counts.certified + d.counts.uncertified;
+        const pct = tested > 0 ? `${Math.round((d.counts.certified / tested) * 100)}%` : '—';
+        return {
+          monthName: d.monthName,
+          monthlyTotal: d.counts.total,
+          pending: d.counts.pending,
+          certified: d.counts.certified,
+          uncertified: d.counts.uncertified,
+          cumulativeTotal: d.cumulativeTotal,
+          percentage: pct,
+        };
+      });
+    } else {
+      // Default: monthly or progressive or sample-type
+      title = isProgressivePeriod
+        ? `प्रोग्रेसिव्ह नमुना संकलन व तपासणी अहवाल (${periodLabel})`
+        : `मासिक नमुना संकलन व प्रयोगशाळा निकाल अहवाल (${periodLabel})`;
+      columns = [
+        { header: 'नमुना प्रकार', accessor: 'typeName', width: '180px' },
+        { header: 'नमुना कोड', accessor: 'codePrefix', align: 'center', width: '90px' },
+        { header: 'एकूण संकलित', accessor: 'total', align: 'center', width: '100px' },
+        { header: 'अप्राप्त (Pending)', accessor: 'pending', align: 'center', width: '110px' },
+        { header: 'प्रमाणित (Fit / योग्य)', accessor: 'certified', align: 'center', width: '120px' },
+        { header: 'अप्रमाणित (Unfit / अयोग्य)', accessor: 'uncertified', align: 'center', width: '130px' },
+        { header: 'प्रमाणित टक्केवारी (%)', accessor: 'percentage', align: 'center', width: '130px' },
+      ];
+      rows = sampleTypeBreakdown.map((d) => {
+        const tested = d.counts.certified + d.counts.uncertified;
+        const pct = tested > 0 ? `${Math.round((d.counts.certified / tested) * 100)}%` : '—';
+        return {
+          typeName: d.sampleType.marathiName,
+          codePrefix: d.sampleType.codePrefix,
+          total: d.counts.total,
+          pending: d.counts.pending,
+          certified: d.counts.certified,
+          uncertified: d.counts.uncertified,
+          percentage: pct,
+        };
+      });
+    }
+
+    return {
+      title,
+      subtitle,
+      periodText: periodLabel,
+      filterDetails,
+      summaryStats,
+      columns,
+      rows,
+      orientation,
+    };
+  }, [
+    activeTab,
+    consolidatedTimeframe,
+    progressiveSamples,
+    monthlySamples,
+    subcenterReportData,
+    villageReportData,
+    consolidatedMatrix,
+    sampleTypeBreakdown,
+    monthlyTrendData,
+    progressiveStartName,
+    monthName,
+    selectedYear,
+    selectedSubcenterId,
+    selectedVillageId,
+    selectedTypeId,
+    resultFilter,
+    subcenters,
+    villages,
+    sampleTypes,
+  ]);
+
   // Handle Drill-Down Modal
   const openDrillDown = (title: string, subtitle: string, samples: SampleRecord[]) => {
     setDrillDown({
@@ -724,8 +952,16 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
 
           <div className="flex flex-wrap items-center gap-2 print:hidden">
             <button
+              onClick={() => setIsPdfModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold shadow transition-all active:scale-95 cursor-pointer"
+              title="अधिकृत शासकीय नमुना अहवाल PDF स्वरूपात जनरेट व डाऊनलोड करा"
+            >
+              <FileText className="w-3.5 h-3.5 text-rose-200" />
+              <span>शासकीय अहवाल PDF</span>
+            </button>
+            <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-sm transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 shadow-sm transition-all cursor-pointer"
               title="CSV स्वरूपात निर्यात करा"
             >
               <Download className="w-3.5 h-3.5 text-slate-600" />
@@ -733,7 +969,7 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
             </button>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-semibold border border-emerald-200 shadow-sm transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-semibold border border-emerald-200 shadow-sm transition-all cursor-pointer"
               title="Excel स्वरूपात निर्यात करा"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
@@ -741,11 +977,11 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg text-xs font-bold shadow transition-all"
-              title="अहवाल मुद्रित करा / Print PDF"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold shadow transition-all cursor-pointer"
+              title="अहवाल मुद्रित करा / Print Register"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>प्रिंट / PDF</span>
+              <span>प्रिंट करा</span>
             </button>
           </div>
         </div>
@@ -2138,6 +2374,21 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
           </div>
         </div>
       )}
+
+      {/* Official Government Formatted PDF Modal */}
+      <OfficialReportPdfModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        reportTitle={pdfDataConfig.title}
+        reportSubtitle={pdfDataConfig.subtitle}
+        periodText={pdfDataConfig.periodText}
+        filterDetails={pdfDataConfig.filterDetails}
+        summaryStats={pdfDataConfig.summaryStats}
+        columns={pdfDataConfig.columns}
+        data={pdfDataConfig.rows}
+        orientationDefault={pdfDataConfig.orientation}
+        currentUser={currentUser}
+      />
     </div>
   );
 };

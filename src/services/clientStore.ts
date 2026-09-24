@@ -14,6 +14,10 @@ import {
   AuditLog,
   MasterImportSummary,
   MasterImportRow,
+  WaterSourceImportRow,
+  WaterSourceImportSummary,
+  SampleImportRow,
+  SampleImportSummary,
   SubcenterVillageImportRow,
   SubcenterVillageImportSummary,
   PendingSyncOperation,
@@ -38,106 +42,21 @@ export function generateUUID(): string {
 
 // STORAGE KEYS
 const STORAGE_KEYS = {
-  USERS: 'phc_bhada_users_v2',
-  CURRENT_USER: 'phc_bhada_current_user_v2',
-  SAMPLE_TYPES: 'phc_bhada_sample_types_v2',
-  SUBCENTERS: 'phc_bhada_subcenters_v2',
-  VILLAGES: 'phc_bhada_villages_v2',
-  SOURCES: 'phc_bhada_sources_v2',
-  SAMPLES: 'phc_bhada_samples_v2',
-  SENDING_LETTERS: 'phc_bhada_letters_v2',
-  DISPATCH_SAMPLES: 'phc_bhada_dispatch_samples_v2',
-  AUDIT_LOGS: 'phc_bhada_audit_logs_v2',
-  SYNC_QUEUE: 'phc_bhada_sync_queue_v2',
+  USERS: 'phc_bhada_users_v4',
+  CURRENT_USER: 'phc_bhada_current_user_v4',
+  SAMPLE_TYPES: 'phc_bhada_sample_types_v4',
+  SUBCENTERS: 'phc_bhada_subcenters_v4',
+  VILLAGES: 'phc_bhada_villages_v4',
+  SOURCES: 'phc_bhada_sources_v4',
+  SAMPLES: 'phc_bhada_samples_v4',
+  SENDING_LETTERS: 'phc_bhada_letters_v4',
+  DISPATCH_SAMPLES: 'phc_bhada_dispatch_samples_v4',
+  AUDIT_LOGS: 'phc_bhada_audit_logs_v4',
+  SYNC_QUEUE: 'phc_bhada_sync_queue_v4',
 };
 
 // INITIAL SEED DATA
-const DEFAULT_SUBCENTERS: SubcenterMaster[] = [
-  {
-    id: 'SC-BHD-01',
-    subcenterCode: 'BHD',
-    subcenterName: 'भादा',
-    marathiName: 'उपकेंद्र भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SC-LKH-01',
-    subcenterCode: 'LKH',
-    subcenterName: 'लखनगाव',
-    marathiName: 'उपकेंद्र लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SC-UTI-01',
-    subcenterCode: 'UTI',
-    subcenterName: 'उटी बु.',
-    marathiName: 'उपकेंद्र उटी बु.',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SC-ASH-01',
-    subcenterCode: 'ASH',
-    subcenterName: 'आशिव',
-    marathiName: 'उपकेंद्र आशिव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SC-UJN-01',
-    subcenterCode: 'UJN',
-    subcenterName: 'उजनी',
-    marathiName: 'उपकेंद्र उजनी',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SC-LHT-01',
-    subcenterCode: 'LHT',
-    subcenterName: 'लोहटा',
-    marathiName: 'उपकेंद्र लोहटा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SC-BRG-01',
-    subcenterCode: 'BRG',
-    subcenterName: 'बोरगाव',
-    marathiName: 'उपकेंद्र बोरगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-];
+const DEFAULT_SUBCENTERS: SubcenterMaster[] = [];
 
 const DEFAULT_USERS: User[] = [
   {
@@ -311,1740 +230,15 @@ const DEFAULT_SAMPLE_TYPES: SampleTypeMaster[] = [
   },
 ];
 
-const DEFAULT_VILLAGES: VillageMaster[] = [
-  {
-    id: 'VIL-001',
-    name: 'भादा',
-    englishName: 'Bhada',
-    code: 'BHD',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'VIL-002',
-    name: 'लखनगाव',
-    englishName: 'Lakhanagaon',
-    code: 'LKH',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'VIL-003',
-    name: 'उटी बु.',
-    englishName: 'Uti Bk',
-    code: 'UTI',
-    subcenterId: 'SC-UTI-01',
-    subcenterName: 'उटी बु.',
-    subcenter: 'उटी बु.',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'VIL-004',
-    name: 'आशिव',
-    englishName: 'Ashiv',
-    code: 'ASH',
-    subcenterId: 'SC-ASH-01',
-    subcenterName: 'आशिव',
-    subcenter: 'आशिव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'VIL-005',
-    name: 'उजनी',
-    englishName: 'Ujani',
-    code: 'UJN',
-    subcenterId: 'SC-UJN-01',
-    subcenterName: 'उजनी',
-    subcenter: 'उजनी',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'VIL-006',
-    name: 'लोहटा',
-    englishName: 'Lohata',
-    code: 'LHT',
-    subcenterId: 'SC-LHT-01',
-    subcenterName: 'लोहटा',
-    subcenter: 'लोहटा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'VIL-007',
-    name: 'बोरगाव',
-    englishName: 'Borgaon',
-    code: 'BRG',
-    subcenterId: 'SC-BRG-01',
-    subcenterName: 'बोरगाव',
-    subcenter: 'बोरगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    isActive: true,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-];
+const DEFAULT_VILLAGES: VillageMaster[] = [];
 
-const DEFAULT_SOURCES: SourceMaster[] = [
-  // Lakhanagaon Sources
-  {
-    id: 'SRC-LKH-001',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर',
-    sourceCode: 'LKH-W01',
-    sourceType: 'विहीर',
-    locationAddress: 'मारुती मंदिराशेजारी, वार्ड क्र. १',
-    isActive: true,
-    remarks: 'ग्रामपंचायत सार्वजनिक पिण्याचे पाण्याचा मुख्य स्त्रोत',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LKH-002',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'जि.प. शाळा हातपंप',
-    sourceCode: 'LKH-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'प्राथमिक शाळा परिसर, लखनगाव',
-    isActive: true,
-    remarks: 'विद्यार्थी पिण्याचे पाणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LKH-003',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'सार्वजनिक पाण्याची टाकी',
-    sourceCode: 'LKH-TK01',
-    sourceType: 'सार्वजनिक टाकी',
-    locationAddress: 'गावठाण मध्यवर्ती टाकी, लखनगाव',
-    isActive: true,
-    remarks: 'ईएसआर टाकी नळ वितरण',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LKH-004',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'दलित वस्ती कूपनलिका',
-    sourceCode: 'LKH-BW01',
-    sourceType: 'कूपनलिका',
-    locationAddress: 'डॉ. आंबेडकर नगर, वार्ड क्र. ३',
-    isActive: true,
-    remarks: 'सार्वजनिक कूपनलिका',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LKH-005',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर',
-    sourceCode: 'LKH-W01',
-    sourceType: 'विहीर',
-    locationAddress: 'मारुती मंदिराशेजारी, वार्ड क्र. १',
-    isActive: true,
-    remarks: 'रासायनिक तपासणी स्त्रोत',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LKH-006',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    sourceName: 'जि.प. शाळा हातपंप',
-    sourceCode: 'LKH-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'प्राथमिक शाळा परिसर, लखनगाव',
-    isActive: true,
-    remarks: 'रासायनिक तपासणी स्त्रोत',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
+const DEFAULT_SOURCES: SourceMaster[] = [];
 
-  // Bhada Sources
-  {
-    id: 'SRC-BHD-001',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'मुख्य पाणीपुरवठा नळ योजना विहीर',
-    sourceCode: 'BHD-W01',
-    sourceType: 'नळ योजना',
-    locationAddress: 'नदीकाठ, भादा',
-    isActive: true,
-    remarks: 'प्राथमिक पाणी योजना',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BHD-002',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'प्राथमिक आरोग्य केंद्र टाकी',
-    sourceCode: 'BHD-TK01',
-    sourceType: 'सार्वजनिक टाकी',
-    locationAddress: 'प्रा.आ. केंद्र परिसर, भादा',
-    isActive: true,
-    remarks: 'आरोग्य केंद्र पिण्याचे पाणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BHD-003',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'बस स्टँड जवळील हातपंप',
-    sourceCode: 'BHD-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'बस स्टँड चौक, भादा',
-    isActive: true,
-    remarks: 'सार्वजनिक हातपंप',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BHD-004',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    sourceName: 'मुख्य पाणीपुरवठा नळ योजना विहीर',
-    sourceCode: 'BHD-W01',
-    sourceType: 'नळ योजना',
-    locationAddress: 'नदीकाठ, भादा',
-    isActive: true,
-    remarks: 'रासायनिक तपासणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BHD-005',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'मारुती मंदिर सार्वजनिक विहीर',
-    sourceCode: 'BHD-W02',
-    sourceType: 'विहीर',
-    locationAddress: 'मारुती गल्ली, भादा',
-    isActive: true,
-    remarks: 'सार्वजनिक विहीर',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BHD-006',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    sourceName: 'प्राथमिक आरोग्य केंद्र टाकी',
-    sourceCode: 'BHD-TK02',
-    sourceType: 'सार्वजनिक टाकी',
-    locationAddress: 'आरोग्य केंद्र परिसर, भादा',
-    isActive: true,
-    remarks: 'रासायनिक तपासणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LKH-007',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर क्र. २',
-    sourceCode: 'LKH-W02',
-    sourceType: 'विहीर',
-    locationAddress: 'मारुती मंदिराशेजारी, लखनगाव',
-    isActive: true,
-    remarks: 'रासायनिक तपासणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BRG-001',
-    villageId: 'VIL-007',
-    villageName: 'बोरगाव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
-    sourceCode: 'BRG-W01',
-    sourceType: 'नळ योजना',
-    locationAddress: 'ग्रामपंचायत जवळ, बोरगाव',
-    isActive: true,
-    remarks: 'पिण्याचे पाणी स्त्रोत',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BRG-002',
-    villageId: 'VIL-007',
-    villageName: 'बोरगाव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'शाळा परिसर हातपंप',
-    sourceCode: 'BRG-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'जि.प. शाळा परिसर, बोरगाव',
-    isActive: true,
-    remarks: 'शाळा पिण्याचे पाणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-BRG-003',
-    villageId: 'VIL-007',
-    villageName: 'बोरगाव',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
-    sourceCode: 'BRG-W02',
-    sourceType: 'नळ योजना',
-    locationAddress: 'ग्रामपंचायत जवळ, बोरगाव',
-    isActive: true,
-    remarks: 'रासायनिक तपासणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
+const DEFAULT_SAMPLES: SampleRecord[] = [];
 
-  // Uti Bk Sources
-  {
-    id: 'SRC-UTI-001',
-    villageId: 'VIL-003',
-    villageName: 'उटी बु.',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'ग्रामपंचायत मुख्य विहीर',
-    sourceCode: 'UTI-W01',
-    sourceType: 'विहीर',
-    locationAddress: 'मारुती मंदिर परिसर, उटी बु.',
-    isActive: true,
-    remarks: 'सार्वजनिक पिण्याचे पाणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-UTI-002',
-    villageId: 'VIL-003',
-    villageName: 'उटी बु.',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'जि.प. शाळा हातपंप',
-    sourceCode: 'UTI-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'प्राथमिक शाळा आवार, उटी बु.',
-    isActive: true,
-    remarks: 'शाळा पिण्याचे पाणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-UTI-003',
-    villageId: 'VIL-003',
-    villageName: 'उटी बु.',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'सार्वजनिक पाण्याची टाकी (ESR)',
-    sourceCode: 'UTI-TK01',
-    sourceType: 'सार्वजनिक टाकी',
-    locationAddress: 'गावठाण टाकी, उटी बु.',
-    isActive: true,
-    remarks: 'नळ वितरण टाकी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
+const DEFAULT_LETTERS: SendingLetter[] = [];
 
-  // Ashiv Sources
-  {
-    id: 'SRC-ASH-001',
-    villageId: 'VIL-004',
-    villageName: 'आशिव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'मुख्य नळ योजना विहीर',
-    sourceCode: 'ASH-W01',
-    sourceType: 'नळ योजना',
-    locationAddress: 'नदीकाठ विहीर, आशिव',
-    isActive: true,
-    remarks: 'सार्वजनिक पाणी योजना',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-ASH-002',
-    villageId: 'VIL-004',
-    villageName: 'आशिव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'ग्रामपंचायत सार्वजनिक हातपंप',
-    sourceCode: 'ASH-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'बस स्टँड चौक, आशिव',
-    isActive: true,
-    remarks: 'सार्वजनिक हातपंप',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-ASH-003',
-    villageId: 'VIL-004',
-    villageName: 'आशिव',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'जि.प. शाळा कूपनलिका',
-    sourceCode: 'ASH-BW01',
-    sourceType: 'कूपनलिका',
-    locationAddress: 'केंद्रीय प्राथमिक शाळा, आशिव',
-    isActive: true,
-    remarks: 'शाळा परिसर स्त्रोत',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-
-  // Ujani Sources
-  {
-    id: 'SRC-UJN-001',
-    villageId: 'VIL-005',
-    villageName: 'उजनी',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'ग्रामपंचायत मुख्य विहीर',
-    sourceCode: 'UJN-W01',
-    sourceType: 'विहीर',
-    locationAddress: 'गावठाण परिसर, उजनी',
-    isActive: true,
-    remarks: 'मुख्य सार्वजनिक स्त्रोत',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-UJN-002',
-    villageId: 'VIL-005',
-    villageName: 'उजनी',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'सार्वजनिक पाण्याची टाकी (ESR)',
-    sourceCode: 'UJN-TK01',
-    sourceType: 'सार्वजनिक टाकी',
-    locationAddress: 'उजनी मध्यवर्ती टाकी',
-    isActive: true,
-    remarks: 'नळ वितरण टाकी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-UJN-003',
-    villageId: 'VIL-005',
-    villageName: 'उजनी',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'स्मशानभूमी जवळील हातपंप',
-    sourceCode: 'UJN-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'उजनी शिवार',
-    isActive: true,
-    remarks: 'हातपंप',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-
-  // Lohata Sources
-  {
-    id: 'SRC-LHT-001',
-    villageId: 'VIL-006',
-    villageName: 'लोहटा',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
-    sourceCode: 'LHT-W01',
-    sourceType: 'नळ योजना',
-    locationAddress: 'लोहटा शिवार',
-    isActive: true,
-    remarks: 'सार्वजनिक नळ योजना',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LHT-002',
-    villageId: 'VIL-006',
-    villageName: 'लोहटा',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'जि.प. शाळा हातपंप',
-    sourceCode: 'LHT-HP01',
-    sourceType: 'हातपंप',
-    locationAddress: 'शाळा परिसर, लोहटा',
-    isActive: true,
-    remarks: 'शाळा पिण्याचे पाणी',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'SRC-LHT-003',
-    villageId: 'VIL-006',
-    villageName: 'लोहटा',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    sourceName: 'सार्वजनिक कूपनलिका',
-    sourceCode: 'LHT-BW01',
-    sourceType: 'कूपनलिका',
-    locationAddress: 'बौद्ध नगर, लोहटा',
-    isActive: true,
-    remarks: 'सार्वजनिक कूपनलिका',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-  },
-];
-
-const DEFAULT_SAMPLES: SampleRecord[] = [
-  {
-    id: 'WS-BIO-2026-0001',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-18',
-    dispatchDate: '2026-09-18',
-    sendingDate: '2026-09-18',
-    reportReceivedDate: '2026-09-20',
-    reportUpdateDate: '2026-09-20',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-LKH-001',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर',
-    sourceType: 'विहीर',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'LKH-B01',
-    sendingLetterId: 'LTR-2026-0001',
-    sendingLetterNumber: 'जा.क्र./प्राआकेंद्राभादा/पाणी/२०२६/४५',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Report Received',
-    reportNumber: 'DPHL/LTR/BIO/2026/894',
-    result: 'पिण्यास योग्य',
-    resultQuantitative: {
-      turbidity: 1.1,
-      residualChlorine: 0.5,
-      h2sResult: 'Negative',
-    },
-    reportRemarks: 'नमुना पिण्यास योग्य आहे. क्लोरीनेशन समाधानकारक.',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-18T09:30:00Z',
-    updatedBy: 'USR-001',
-    updatedByName: 'डॉ. वैद्यकीय अधिकारी',
-    updatedAt: '2026-09-20T14:15:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0002',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-18',
-    dispatchDate: '2026-09-18',
-    sendingDate: '2026-09-18',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-LKH-002',
-    sourceName: 'जि.प. शाळा हातपंप',
-    sourceType: 'हातपंप',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'LKH-B02',
-    sendingLetterId: 'LTR-2026-0001',
-    sendingLetterNumber: 'जा.क्र./प्राआकेंद्राभादा/पाणी/२०२६/४५',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Dispatched',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-18T09:40:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-18T10:00:00Z',
-    isActive: true,
-  },
-  // Pending Water Samples for Date: 2026-09-22 (Test Scenario & Active Dispatch Workflow)
-  {
-    id: 'WS-BIO-2026-0010',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BHD-001',
-    sourceName: 'मुख्य पाणीपुरवठा नळ योजना विहीर',
-    sourceType: 'नळ योजना',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'BHD-B01',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T08:00:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T08:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0011',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BHD-002',
-    sourceName: 'प्राथमिक आरोग्य केंद्र टाकी',
-    sourceType: 'सार्वजनिक टाकी',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'BHD-B02',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T08:15:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T08:15:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0012',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BHD-003',
-    sourceName: 'बस स्टँड जवळील हातपंप',
-    sourceType: 'हातपंप',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'BHD-B03',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T08:30:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T08:30:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0013',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BHD-005',
-    sourceName: 'मारुती मंदिर सार्वजनिक विहीर',
-    sourceType: 'विहीर',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'BHD-B04',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T08:45:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T08:45:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0014',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-LKH-001',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर',
-    sourceType: 'विहीर',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'LKH-B03',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T09:00:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T09:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0015',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-LKH-002',
-    sourceName: 'जि.प. शाळा हातपंप',
-    sourceType: 'हातपंप',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'LKH-B04',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T09:15:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T09:15:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0016',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-LKH-003',
-    sourceName: 'सार्वजनिक पाण्याची टाकी',
-    sourceType: 'सार्वजनिक टाकी',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'LKH-B05',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T09:30:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T09:30:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0017',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BRG-01',
-    subcenterName: 'बोरगाव',
-    subcenter: 'बोरगाव',
-    villageId: 'VIL-007',
-    villageName: 'बोरगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BRG-001',
-    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
-    sourceType: 'नळ योजना',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'BRG-B01',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T09:45:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T09:45:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-BIO-2026-0018',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological / Microbiological Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BRG-01',
-    subcenterName: 'बोरगाव',
-    subcenter: 'बोरगाव',
-    villageId: 'VIL-007',
-    villageName: 'बोरगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BRG-002',
-    sourceName: 'शाळा परिसर हातपंप',
-    sourceType: 'हातपंप',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '250 ml',
-    sampleCodeOrBottleNo: 'BRG-B02',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक (Health Worker)',
-    createdAt: '2026-09-22T10:00:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T10:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-CHM-2026-0010',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BHD-004',
-    sourceName: 'मुख्य पाणीपुरवठा नळ योजना विहीर',
-    sourceType: 'नळ योजना',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '2 Ltr',
-    sampleCodeOrBottleNo: 'BHD-CHM-02',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक',
-    createdAt: '2026-09-22T08:00:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T08:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-CHM-2026-0011',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BHD-006',
-    sourceName: 'प्राथमिक आरोग्य केंद्र टाकी',
-    sourceType: 'सार्वजनिक टाकी',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '2 Ltr',
-    sampleCodeOrBottleNo: 'BHD-CHM-03',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक',
-    createdAt: '2026-09-22T08:15:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T08:15:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-CHM-2026-0012',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-LKH-005',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर',
-    sourceType: 'विहीर',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '2 Ltr',
-    sampleCodeOrBottleNo: 'LKH-CHM-02',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक',
-    createdAt: '2026-09-22T09:00:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T09:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-CHM-2026-0013',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BRG-01',
-    subcenterName: 'बोरगाव',
-    subcenter: 'बोरगाव',
-    villageId: 'VIL-007',
-    villageName: 'बोरगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BRG-003',
-    sourceName: 'ग्रामपंचायत नळ योजना विहीर',
-    sourceType: 'नळ योजना',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '2 Ltr',
-    sampleCodeOrBottleNo: 'BRG-CHM-01',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Ready for Dispatch',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक',
-    createdAt: '2026-09-22T09:45:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-22T09:45:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-CHM-2026-0001',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    collectionDate: '2026-09-14',
-    dispatchDate: '2026-09-15',
-    sendingDate: '2026-09-15',
-    reportReceivedDate: '2026-09-19',
-    reportUpdateDate: '2026-09-19',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-BHD-004',
-    sourceName: 'मुख्य पाणीपुरवठा नळ योजना विहीर',
-    sourceType: 'नळ योजना',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '2 Ltr',
-    sampleCodeOrBottleNo: 'BHD-CHM-01',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Report Received',
-    reportNumber: 'DPHL/CHM/2026/512',
-    result: 'पिण्यास योग्य',
-    resultQuantitative: {
-      ph: 7.4,
-      tds: 340,
-      totalHardness: 210,
-    },
-    reportRemarks: 'रासायनिक घटक विहित मर्यादेत आहेत. पाणी पिण्यास योग्य.',
-    createdBy: 'USR-001',
-    createdByName: 'डॉ. वैद्यकीय अधिकारी',
-    createdAt: '2026-09-14T10:00:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-19T15:30:00Z',
-    isActive: true,
-  },
-  {
-    id: 'WS-CHM-2026-0002',
-    sampleTypeId: 'ST-002',
-    sampleTypeName: 'Water Sample – Chemical Examination',
-    collectionDate: '2026-09-14',
-    dispatchDate: '2026-09-15',
-    sendingDate: '2026-09-15',
-    reportReceivedDate: '2026-09-19',
-    reportUpdateDate: '2026-09-19',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceId: 'SRC-LKH-005',
-    sourceName: 'मुख्य ग्रामपंचायत विहीर',
-    sourceType: 'विहीर',
-    sampleCollector: 'श्री. आरोग्य सहाय्यक',
-    sampleQuantity: '2 Ltr',
-    sampleCodeOrBottleNo: 'LKH-CHM-01',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Report Received',
-    reportNumber: 'DPHL/CHM/2026/513',
-    result: 'पिण्यास अयोग्य',
-    resultQuantitative: {
-      ph: 8.6,
-      tds: 1450,
-      totalHardness: 680,
-    },
-    reportRemarks: 'टीडीएस व हार्डनेस विहित मर्यादेपेक्षा जास्त. पाणी पिण्यास अयोग्य.',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक',
-    createdAt: '2026-09-14T10:30:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-19T15:45:00Z',
-    isActive: true,
-  },
-  {
-    id: 'SLT-2026-0001',
-    sampleTypeId: 'ST-003',
-    sampleTypeName: 'Salt Sample',
-    collectionDate: '2026-09-15',
-    dispatchDate: '2026-09-16',
-    sendingDate: '2026-09-16',
-    reportReceivedDate: '2026-09-19',
-    reportUpdateDate: '2026-09-19',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    shopOrInstitutionName: 'जय भवानी किराणा स्टोअर, मेन रोड भादा',
-    sampleDescription: 'टाटा आयोडाइज्ड मीठ (पॅक नमुना)',
-    batchNumber: 'B-260814',
-    manufacturerName: 'टाटा सॉल्ट्स लि.',
-    mfdDate: '2026-08-01',
-    expDate: '2028-07-31',
-    sampleQuantity: '500 gm',
-    sendingLetterId: 'LTR-2026-0002',
-    sendingLetterNumber: 'जा.क्र./प्राआकेंद्राभादा/मीठ/२०२६/१२',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Report Received',
-    reportNumber: 'DPHL/SALT/2026/304',
-    result: 'प्रमाणित (Adequate Iodine)',
-    resultQuantitative: {
-      iodinePpm: 28,
-    },
-    reportRemarks: 'आयोडीन प्रमाण २८ PPM (किमान १५ PPM पेक्षा जास्त)',
-    createdBy: 'USR-001',
-    createdByName: 'डॉ. वैद्यकीय अधिकारी',
-    createdAt: '2026-09-15T11:00:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-19T16:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'TCL-2026-0001',
-    sampleTypeId: 'ST-004',
-    sampleTypeName: 'TCL Sample',
-    collectionDate: '2026-09-15',
-    dispatchDate: '2026-09-16',
-    sendingDate: '2026-09-16',
-    reportReceivedDate: '2026-09-19',
-    reportUpdateDate: '2026-09-19',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    sourceName: 'ग्रामपंचायत लखनगाव पाणीपुरवठा साठा',
-    batchNumber: 'TCL-2026-L8',
-    manufacturerName: 'महाराष्ट्र केमिकल्स प्रा. लि.',
-    mfdDate: '2026-07-15',
-    expDate: '2027-01-15',
-    sampleQuantity: '250 gm',
-    sendingLetterId: 'LTR-2026-0003',
-    sendingLetterNumber: 'जा.क्र./प्राआकेंद्राभादा/TCL/२०२६/०८',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    status: 'Report Received',
-    reportNumber: 'DPHL/TCL/2026/188',
-    result: 'प्रमाणित (>=33% Chlorine)',
-    resultQuantitative: {
-      availableChlorinePercent: 34.2,
-    },
-    reportRemarks: 'उपलब्ध क्लोरीन ३४.२% - प्रमाणित दर्जा',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक',
-    createdAt: '2026-09-15T11:30:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-19T16:20:00Z',
-    isActive: true,
-  },
-  {
-    id: 'DNG-2026-0001',
-    sampleTypeId: 'ST-006',
-    sampleTypeName: 'Dengue / Chikungunya – Serum Sample',
-    collectionDate: '2026-09-19',
-    dispatchDate: '2026-09-19',
-    sendingDate: '2026-09-19',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    patientId: 'PT-2026-081',
-    patientName: 'सचिन मारुती पाटील',
-    age: 28,
-    sex: 'पुरुष',
-    patientAddress: 'वार्ड क्र. २, हनुमान मंदिराजवळ, भादा',
-    contactNumber: '9822114455',
-    mobile: '9822114455',
-    houseNo: '142',
-    hospitalAddress: 'प्राथमिक आरोग्य केंद्र, भादा',
-    patientRegNo: 'OPD-8941',
-    wardNo: 'OPD Ward 1',
-    bedNo: 'Bed-04',
-    natureOfSample: 'Serum',
-    feverOnsetDate: '2026-09-14',
-    symptomOnsetDate: '2026-09-14',
-    testRequested: 'डेंग्यू (NS1/IgM)',
-    fever: 'होय',
-    feverDuration: '5 Days',
-    feverPresent: 'Yes',
-    feverDurationDays: 5,
-    headache: 'होय',
-    headacheDuration: '4 Days',
-    headachePresent: 'Yes',
-    headacheDurationDays: 4,
-    bodyache: 'होय',
-    bodyacheDuration: '4 Days',
-    bodyachePresent: 'Yes',
-    bodyacheDurationDays: 4,
-    jointPain: 'होय',
-    jointPainDuration: '3 Days',
-    jointPainPresent: 'Yes',
-    jointPainDurationDays: 3,
-    retroOrbitalPain: 'नाही',
-    retroOrbitalPainDuration: '0 Days',
-    retroOrbitalPainPresent: 'No',
-    retroOrbitalPainDurationDays: null,
-    rash: 'नाही',
-    rashDuration: '0 Days',
-    rashPresent: 'No',
-    rashDurationDays: null,
-    haemorrhagicManifestation: 'नाही',
-    hematemesis: 'नाही',
-    hematemesisPresent: 'No',
-    hematemesisDurationDays: null,
-    epistaxis: 'नाही',
-    epistaxisPresent: 'No',
-    epistaxisDurationDays: null,
-    melena: 'नाही',
-    melenaPresent: 'No',
-    melenaDurationDays: null,
-    otherHaemorrhagic: 'None',
-    otherHemorrhagicPresent: 'No',
-    otherHemorrhagicDescription: '',
-    otherHemorrhagicDurationDays: null,
-    sendingLetterId: 'LTR-2026-0004',
-    sendingLetterNumber: 'जा.क्र./प्राआकेंद्राभादा/डेंग्यू/२०२६/२२',
-    laboratoryName: 'शासकीय वैद्यकीय महाविद्यालय व रुग्णालय प्रयोगशाळा, लातूर',
-    dispatchMode: 'विशेष दूत (कोल्ड चेन बॉक्स)',
-    status: 'Ready for Dispatch',
-    remarks: 'तीव्र ताप, सांधेदुखी व डोकेदुखी. कोल्ड चेनमध्ये सीरम नमुना सुरक्षित.',
-    createdBy: 'USR-001',
-    createdByName: 'डॉ. वैद्यकीय अधिकारी',
-    createdAt: '2026-09-19T10:00:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-19T10:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'DNG-2026-0002',
-    sampleTypeId: 'ST-006',
-    sampleTypeName: 'Dengue / Chikungunya – Serum Sample',
-    collectionDate: '2026-09-20',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    patientId: 'PT-2026-082',
-    patientName: 'राहुल ज्ञानोबा सूर्यवंशी',
-    age: 32,
-    sex: 'पुरुष',
-    patientAddress: 'गल्ली क्र. ३, बस स्टँडजवळ, भादा',
-    contactNumber: '9850123456',
-    mobile: '9850123456',
-    houseNo: '58',
-    hospitalAddress: 'प्राथमिक आरोग्य केंद्र, भादा',
-    patientRegNo: 'OPD-8952',
-    wardNo: 'OPD Ward 1',
-    bedNo: 'Bed-02',
-    natureOfSample: 'Serum',
-    feverOnsetDate: '2026-09-17',
-    symptomOnsetDate: '2026-09-17',
-    testRequested: 'डेंग्यू (NS1/IgM)',
-    fever: 'होय',
-    feverDuration: '3 Days',
-    feverPresent: 'Yes',
-    feverDurationDays: 3,
-    headache: 'होय',
-    headacheDuration: '3 Days',
-    headachePresent: 'Yes',
-    headacheDurationDays: 3,
-    bodyache: 'होय',
-    bodyacheDuration: '2 Days',
-    bodyachePresent: 'Yes',
-    bodyacheDurationDays: 2,
-    jointPain: 'नाही',
-    jointPainDuration: '0 Days',
-    jointPainPresent: 'No',
-    jointPainDurationDays: null,
-    retroOrbitalPain: 'होय',
-    retroOrbitalPainDuration: '2 Days',
-    retroOrbitalPainPresent: 'Yes',
-    retroOrbitalPainDurationDays: 2,
-    rash: 'नाही',
-    rashDuration: '0 Days',
-    rashPresent: 'No',
-    rashDurationDays: null,
-    haemorrhagicManifestation: 'नाही',
-    hematemesis: 'नाही',
-    hematemesisPresent: 'No',
-    hematemesisDurationDays: null,
-    epistaxis: 'नाही',
-    epistaxisPresent: 'No',
-    epistaxisDurationDays: null,
-    melena: 'नाही',
-    melenaPresent: 'No',
-    melenaDurationDays: null,
-    otherHaemorrhagic: 'None',
-    otherHemorrhagicPresent: 'No',
-    otherHemorrhagicDescription: '',
-    otherHemorrhagicDurationDays: null,
-    laboratoryName: 'शासकीय वैद्यकीय महाविद्यालय (GMC) प्रयोगशाळा, लातूर',
-    dispatchMode: 'विशेष दूत (कोल्ड चेन बॉक्स)',
-    status: 'Ready for Dispatch',
-    remarks: 'डोळ्यांमागे तीव्र वेदना व ताप.',
-    createdBy: 'USR-001',
-    createdByName: 'डॉ. वैद्यकीय अधिकारी',
-    createdAt: '2026-09-20T09:15:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-20T09:15:00Z',
-    isActive: true,
-  },
-  {
-    id: 'DNG-2026-0003',
-    sampleTypeId: 'ST-006',
-    sampleTypeName: 'Dengue / Chikungunya – Serum Sample',
-    collectionDate: '2026-09-20',
-    subcenterId: 'SC-LKH-01',
-    subcenterName: 'लखनगाव',
-    subcenter: 'लखनगाव',
-    villageId: 'VIL-002',
-    villageName: 'लखनगाव',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    patientId: 'PT-2026-083',
-    patientName: 'सुनिता अशोक कांबळे',
-    age: 45,
-    sex: 'स्त्री',
-    patientAddress: 'अशोक नगर, लखनगाव, ता. औसा',
-    contactNumber: '9764556677',
-    mobile: '9764556677',
-    houseNo: '210',
-    hospitalAddress: 'प्राथमिक आरोग्य केंद्र, भादा',
-    patientRegNo: 'OPD-8960',
-    wardNo: 'Female Ward',
-    bedNo: 'Bed-07',
-    natureOfSample: 'Serum',
-    feverOnsetDate: '2026-09-16',
-    symptomOnsetDate: '2026-09-16',
-    testRequested: 'डेंग्यू व चिकनगुनिया',
-    fever: 'होय',
-    feverDuration: '4 Days',
-    feverPresent: 'Yes',
-    feverDurationDays: 4,
-    headache: 'होय',
-    headacheDuration: '4 Days',
-    headachePresent: 'Yes',
-    headacheDurationDays: 4,
-    bodyache: 'होय',
-    bodyacheDuration: '4 Days',
-    bodyachePresent: 'Yes',
-    bodyacheDurationDays: 4,
-    jointPain: 'होय',
-    jointPainDuration: '4 Days',
-    jointPainPresent: 'Yes',
-    jointPainDurationDays: 4,
-    retroOrbitalPain: 'नाही',
-    retroOrbitalPainDuration: '0 Days',
-    retroOrbitalPainPresent: 'No',
-    retroOrbitalPainDurationDays: null,
-    rash: 'नाही',
-    rashDuration: '0 Days',
-    rashPresent: 'No',
-    rashDurationDays: null,
-    haemorrhagicManifestation: 'नाही',
-    hematemesis: 'नाही',
-    hematemesisPresent: 'No',
-    hematemesisDurationDays: null,
-    epistaxis: 'नाही',
-    epistaxisPresent: 'No',
-    epistaxisDurationDays: null,
-    melena: 'नाही',
-    melenaPresent: 'No',
-    melenaDurationDays: null,
-    otherHaemorrhagic: 'None',
-    otherHemorrhagicPresent: 'No',
-    otherHemorrhagicDescription: '',
-    otherHemorrhagicDurationDays: null,
-    laboratoryName: 'शासकीय वैद्यकीय महाविद्यालय (GMC) प्रयोगशाळा, लातूर',
-    dispatchMode: 'विशेष दूत (कोल्ड चेन बॉक्स)',
-    status: 'Ready for Dispatch',
-    remarks: 'तीव्र सांधेदुखी व उच्च ताप - संशयित चिकनगुनिया.',
-    createdBy: 'USR-002',
-    createdByName: 'श्री. आरोग्य सहाय्यक',
-    createdAt: '2026-09-20T10:45:00Z',
-    updatedBy: 'USR-002',
-    updatedAt: '2026-09-20T10:45:00Z',
-    isActive: true,
-  },
-  {
-    id: 'DNG-2026-0004',
-    sampleTypeId: 'ST-006',
-    sampleTypeName: 'Dengue / Chikungunya – Serum Sample',
-    collectionDate: '2026-09-21',
-    subcenterId: 'SC-UTI-01',
-    subcenterName: 'उटी बु.',
-    subcenter: 'उटी बु.',
-    villageId: 'VIL-003',
-    villageName: 'उटी बु.',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    patientId: 'PT-2026-084',
-    patientName: 'विकास भागवत जाधव',
-    age: 19,
-    sex: 'पुरुष',
-    patientAddress: 'शाळा परिसर, उटी बु., ता. औसा',
-    contactNumber: '9421889900',
-    mobile: '9421889900',
-    houseNo: '84',
-    hospitalAddress: 'प्राथमिक आरोग्य केंद्र, भादा',
-    patientRegNo: 'OPD-8975',
-    wardNo: 'OPD Ward 2',
-    bedNo: 'Bed-01',
-    natureOfSample: 'Serum',
-    feverOnsetDate: '2026-09-18',
-    symptomOnsetDate: '2026-09-18',
-    testRequested: 'डेंग्यू (NS1/IgM)',
-    fever: 'होय',
-    feverDuration: '3 Days',
-    feverPresent: 'Yes',
-    feverDurationDays: 3,
-    headache: 'होय',
-    headacheDuration: '3 Days',
-    headachePresent: 'Yes',
-    headacheDurationDays: 3,
-    bodyache: 'होय',
-    bodyacheDuration: '2 Days',
-    bodyachePresent: 'Yes',
-    bodyacheDurationDays: 2,
-    jointPain: 'नाही',
-    jointPainDuration: '0 Days',
-    jointPainPresent: 'No',
-    jointPainDurationDays: null,
-    retroOrbitalPain: 'होय',
-    retroOrbitalPainDuration: '2 Days',
-    retroOrbitalPainPresent: 'Yes',
-    retroOrbitalPainDurationDays: 2,
-    rash: 'नाही',
-    rashDuration: '0 Days',
-    rashPresent: 'No',
-    rashDurationDays: null,
-    haemorrhagicManifestation: 'नाही',
-    hematemesis: 'नाही',
-    hematemesisPresent: 'No',
-    hematemesisDurationDays: null,
-    epistaxis: 'नाही',
-    epistaxisPresent: 'No',
-    epistaxisDurationDays: null,
-    melena: 'नाही',
-    melenaPresent: 'No',
-    melenaDurationDays: null,
-    otherHaemorrhagic: 'None',
-    otherHemorrhagicPresent: 'No',
-    otherHemorrhagicDescription: '',
-    otherHemorrhagicDurationDays: null,
-    laboratoryName: 'शासकीय वैद्यकीय महाविद्यालय (GMC) प्रयोगशाळा, लातूर',
-    dispatchMode: 'विशेष दूत (कोल्ड चेन बॉक्स)',
-    status: 'Ready for Dispatch',
-    remarks: 'एनएस1 अँटीजेन संशयित.',
-    createdBy: 'USR-003',
-    createdByName: 'श्रीमती. आरोग्य सेविका',
-    createdAt: '2026-09-21T09:00:00Z',
-    updatedBy: 'USR-003',
-    updatedAt: '2026-09-21T09:00:00Z',
-    isActive: true,
-  },
-  {
-    id: 'DNG-2026-0005',
-    sampleTypeId: 'ST-006',
-    sampleTypeName: 'Dengue / Chikungunya – Serum Sample',
-    collectionDate: '2026-09-21',
-    subcenterId: 'SC-YLW-01',
-    subcenterName: 'येळवट',
-    subcenter: 'येळवट',
-    villageId: 'VIL-004',
-    villageName: 'येळवट',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    patientId: 'PT-2026-085',
-    patientName: 'संगीता पांडुरंग माने',
-    age: 38,
-    sex: 'स्त्री',
-    patientAddress: 'ग्रामपंचायत गल्ली, येळवट, ता. औसा',
-    contactNumber: '9604334455',
-    mobile: '9604334455',
-    houseNo: '112',
-    hospitalAddress: 'प्राथमिक आरोग्य केंद्र, भादा',
-    patientRegNo: 'OPD-8982',
-    wardNo: 'Female Ward',
-    bedNo: 'Bed-03',
-    natureOfSample: 'Serum',
-    feverOnsetDate: '2026-09-17',
-    symptomOnsetDate: '2026-09-17',
-    testRequested: 'डेंग्यू (NS1/IgM)',
-    fever: 'होय',
-    feverDuration: '4 Days',
-    feverPresent: 'Yes',
-    feverDurationDays: 4,
-    headache: 'होय',
-    headacheDuration: '4 Days',
-    headachePresent: 'Yes',
-    headacheDurationDays: 4,
-    bodyache: 'होय',
-    bodyacheDuration: '4 Days',
-    bodyachePresent: 'Yes',
-    bodyacheDurationDays: 4,
-    jointPain: 'नाही',
-    jointPainDuration: '0 Days',
-    jointPainPresent: 'No',
-    jointPainDurationDays: null,
-    retroOrbitalPain: 'नाही',
-    retroOrbitalPainDuration: '0 Days',
-    retroOrbitalPainPresent: 'No',
-    retroOrbitalPainDurationDays: null,
-    rash: 'होय',
-    rashDuration: '1 Day',
-    rashPresent: 'Yes',
-    rashDurationDays: 1,
-    haemorrhagicManifestation: 'नाही',
-    hematemesis: 'नाही',
-    hematemesisPresent: 'No',
-    hematemesisDurationDays: null,
-    epistaxis: 'नाही',
-    epistaxisPresent: 'No',
-    epistaxisDurationDays: null,
-    melena: 'नाही',
-    melenaPresent: 'No',
-    melenaDurationDays: null,
-    otherHaemorrhagic: 'None',
-    otherHemorrhagicPresent: 'No',
-    otherHemorrhagicDescription: '',
-    otherHemorrhagicDurationDays: null,
-    laboratoryName: 'शासकीय वैद्यकीय महाविद्यालय (GMC) प्रयोगशाळा, लातूर',
-    dispatchMode: 'विशेष दूत (कोल्ड चेन बॉक्स)',
-    status: 'Ready for Dispatch',
-    remarks: 'अंगावर बारीक पुरळ व ताप.',
-    createdBy: 'USR-001',
-    createdByName: 'डॉ. वैद्यकीय अधिकारी',
-    createdAt: '2026-09-21T11:20:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-21T11:20:00Z',
-    isActive: true,
-  },
-  {
-    id: 'DNG-2026-0006',
-    sampleTypeId: 'ST-006',
-    sampleTypeName: 'Dengue / Chikungunya – Serum Sample',
-    collectionDate: '2026-09-22',
-    subcenterId: 'SC-BHD-01',
-    subcenterName: 'भादा',
-    subcenter: 'भादा',
-    villageId: 'VIL-001',
-    villageName: 'भादा',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    patientId: 'PT-2026-086',
-    patientName: 'अमोल दिगंबर गायकवाड',
-    age: 26,
-    sex: 'पुरुष',
-    patientAddress: 'डॉ. बाबासाहेब आंबेडकर चौक, भादा',
-    contactNumber: '9158778899',
-    mobile: '9158778899',
-    houseNo: '29',
-    hospitalAddress: 'प्राथमिक आरोग्य केंद्र, भादा',
-    patientRegNo: 'OPD-8991',
-    wardNo: 'OPD Ward 1',
-    bedNo: 'Bed-05',
-    natureOfSample: 'Serum',
-    feverOnsetDate: '2026-09-19',
-    symptomOnsetDate: '2026-09-19',
-    testRequested: 'डेंग्यू (NS1/IgM)',
-    fever: 'होय',
-    feverDuration: '3 Days',
-    feverPresent: 'Yes',
-    feverDurationDays: 3,
-    headache: 'होय',
-    headacheDuration: '3 Days',
-    headachePresent: 'Yes',
-    headacheDurationDays: 3,
-    bodyache: 'होय',
-    bodyacheDuration: '2 Days',
-    bodyachePresent: 'Yes',
-    bodyacheDurationDays: 2,
-    jointPain: 'नाही',
-    jointPainDuration: '0 Days',
-    jointPainPresent: 'No',
-    jointPainDurationDays: null,
-    retroOrbitalPain: 'होय',
-    retroOrbitalPainDuration: '1 Day',
-    retroOrbitalPainPresent: 'Yes',
-    retroOrbitalPainDurationDays: 1,
-    rash: 'नाही',
-    rashDuration: '0 Days',
-    rashPresent: 'No',
-    rashDurationDays: null,
-    haemorrhagicManifestation: 'नाही',
-    hematemesis: 'नाही',
-    hematemesisPresent: 'No',
-    hematemesisDurationDays: null,
-    epistaxis: 'नाही',
-    epistaxisPresent: 'No',
-    epistaxisDurationDays: null,
-    melena: 'नाही',
-    melenaPresent: 'No',
-    melenaDurationDays: null,
-    otherHaemorrhagic: 'None',
-    otherHemorrhagicPresent: 'No',
-    otherHemorrhagicDescription: '',
-    otherHemorrhagicDurationDays: null,
-    laboratoryName: 'शासकीय वैद्यकीय महाविद्यालय (GMC) प्रयोगशाळा, लातूर',
-    dispatchMode: 'विशेष दूत (कोल्ड चेन बॉक्स)',
-    status: 'Ready for Dispatch',
-    remarks: 'कोल्ड चेन बॉक्समध्ये सीरम नमुना तयार.',
-    createdBy: 'USR-001',
-    createdByName: 'डॉ. वैद्यकीय अधिकारी',
-    createdAt: '2026-09-22T08:30:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-22T08:30:00Z',
-    isActive: true,
-  },
-  {
-    id: 'MSL-2026-0001',
-    sampleTypeId: 'ST-005',
-    sampleTypeName: 'Measles Patient – Serum Sample',
-    collectionDate: '2026-09-17',
-    dispatchDate: '2026-09-17',
-    sendingDate: '2026-09-17',
-    reportReceivedDate: '2026-09-20',
-    reportUpdateDate: '2026-09-20',
-    subcenterId: 'SC-UTI-01',
-    subcenterName: 'उटी बु.',
-    subcenter: 'उटी बु.',
-    villageId: 'VIL-003',
-    villageName: 'उटी बु.',
-    phcName: 'भादा',
-    taluka: 'औसा',
-    district: 'लातूर',
-    patientId: 'PT-2026-079',
-    patientName: 'कु. वैष्णवी गजानन शिंदे',
-    age: 4,
-    sex: 'स्त्री',
-    patientAddress: 'उटी बु., ता. औसा',
-    contactNumber: '9423112233',
-    feverOnsetDate: '2026-09-12',
-    testRequested: 'गोवर (Measles IgM)',
-    sendingLetterId: 'LTR-2026-0005',
-    sendingLetterNumber: 'जा.क्र./प्राआकेंद्राभादा/गोवर/२०२६/०५',
-    laboratoryName: 'जिल्हा रुग्णालय प्रयोगशाळा / एनआयव्ही (NIV) पुणे',
-    dispatchMode: 'विशेष दूत',
-    status: 'Report Received',
-    reportNumber: 'NIV/PUN/MSL/2026/410',
-    result: 'निगेटिव्ह',
-    reportRemarks: 'Measles IgM Negative (गोवर विषाणू आढळला नाही)',
-    createdBy: 'USR-003',
-    createdByName: 'श्रीमती. आरोग्य सेविका (MPW / ANM)',
-    createdAt: '2026-09-17T11:00:00Z',
-    updatedBy: 'USR-001',
-    updatedAt: '2026-09-20T17:00:00Z',
-    isActive: true,
-  },
-];
-
-const DEFAULT_LETTERS: SendingLetter[] = [
-  {
-    id: 'LTR-2026-0001',
-    letterNumber: 'जा.क्र./प्राआकेंद्राभादा/पाणी/२०२६/४५',
-    letterDate: '2026-09-18',
-    sampleTypeId: 'ST-001',
-    sampleTypeName: 'Water Sample – Bacteriological Examination',
-    toAuthority: 'मा. वरिष्ठ वैज्ञानिक अधिकारी, जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा, लातूर',
-    subject: 'लखनगाव गावातील पिण्याच्या पाण्याचे जैविक नमुने रासायनिक/जैविक तपासणीसाठी पाठविणेबाबत.',
-    reference: 'महाराष्ट्र शासन परिपत्रक क्रमांक: पापू-२०२६/प्र.क्र.४४/आरोग्य-५',
-    laboratoryName: 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर',
-    dispatchMode: 'विशेष दूत',
-    sampleIds: ['WS-BIO-2026-0001', 'WS-BIO-2026-0002'],
-    sampleCount: 2,
-    remarks: 'पावसाळ्यानंतरची नियमित पाणी गुणवत्ता तपासणी.',
-    signatoryTitle: 'वैद्यकीय अधिकारी, प्राथमिक आरोग्य केंद्र भादा, ता. औसा, जि. लातूर',
-    createdBy: 'USR-001',
-    createdAt: '2026-09-18T10:00:00Z',
-    updatedAt: '2026-09-18T10:00:00Z',
-  },
-];
-
-const DEFAULT_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'AUD-001',
-    userId: 'USR-001',
-    userName: 'डॉ. वैद्यकीय अधिकारी',
-    userRole: 'ADMIN',
-    action: 'CREATE',
-    tableName: 'samples',
-    recordId: 'WS-BIO-2026-0001',
-    summary: 'नवीन पाणी जैविक नमुना (WS-BIO-2026-0001) लखनगाव विहीर नोंदविला',
-    timestamp: '2026-09-18T09:30:00Z',
-  },
-  {
-    id: 'AUD-002',
-    userId: 'USR-001',
-    userName: 'डॉ. वैद्यकीय अधिकारी',
-    userRole: 'ADMIN',
-    action: 'DISPATCH',
-    tableName: 'sending_letters',
-    recordId: 'LTR-2026-0001',
-    summary: 'जावक पत्र क्र. जा.क्र./प्राआकेंद्राभादा/पाणी/२०२६/४५ तयार केले (२ नमुने समाविष्ट)',
-    timestamp: '2026-09-18T10:00:00Z',
-  },
-  {
-    id: 'AUD-003',
-    userId: 'USR-001',
-    userName: 'डॉ. वैद्यकीय अधिकारी',
-    userRole: 'ADMIN',
-    action: 'REPORT_UPDATE',
-    tableName: 'samples',
-    recordId: 'WS-BIO-2026-0001',
-    summary: 'प्रयोगशाळा अहवाल नोंदविला: पिण्यास योग्य (DPHL/LTR/BIO/2026/894)',
-    timestamp: '2026-09-20T14:15:00Z',
-  },
-];
+const DEFAULT_AUDIT_LOGS: AuditLog[] = [];
 
 // Helper Functions for Local Storage
 function getFromStorage<T>(key: string, defaultValue: T): T {
@@ -2093,6 +287,36 @@ class ClientDataStore {
   }
 
   private init() {
+    // Purge any legacy dummy data from previous iterations in localStorage
+    if (typeof localStorage !== 'undefined') {
+      try {
+        [
+          'phc_bhada_subcenters_v3',
+          'phc_bhada_villages_v3',
+          'phc_bhada_sources_v3',
+          'phc_bhada_samples_v3',
+          'phc_bhada_letters_v3',
+          'phc_bhada_dispatch_samples_v3',
+          'phc_bhada_audit_logs_v3',
+          'phc_bhada_sync_queue_v3',
+          'phc_bhada_samples_v2',
+          'phc_bhada_subcenters_v2',
+          'phc_bhada_villages_v2',
+          'phc_bhada_sources_v2',
+          'phc_bhada_letters_v2',
+          'phc_bhada_dispatch_samples_v2',
+          'phc_bhada_audit_logs_v2',
+          'phc_bhada_samples',
+          'phc_bhada_subcenters',
+          'phc_bhada_villages',
+          'phc_bhada_sources',
+          'phc_bhada_letters',
+        ].forEach((key) => localStorage.removeItem(key));
+      } catch (e) {
+        console.error('Legacy storage purge error:', e);
+      }
+    }
+
     this.users = getFromStorage(STORAGE_KEYS.USERS, DEFAULT_USERS);
     this.currentUser = getFromStorage(STORAGE_KEYS.CURRENT_USER, DEFAULT_USERS[0]);
     this.sampleTypes = getFromStorage(STORAGE_KEYS.SAMPLE_TYPES, DEFAULT_SAMPLE_TYPES);
@@ -3235,6 +1459,584 @@ class ClientDataStore {
 
     this.notifyListeners();
     return { success: true, message: `स्त्रोत "${src.sourceName}" सक्रिय केला.` };
+  }
+
+  // ==========================================
+  // BULK IMPORT FOR VILLAGE-WISE WATER SOURCES
+  // ==========================================
+  importWaterSources(rows: WaterSourceImportRow[]): WaterSourceImportSummary {
+    const user = this.getCurrentUser();
+    if (user.role !== 'ADMIN') {
+      return {
+        totalRows: rows.length,
+        validRows: 0,
+        invalidRows: rows.length,
+        duplicateRows: 0,
+        sourcesCreated: 0,
+        errors: ['केवळ प्रशासक (Admin) पाणी स्त्रोत आयात करू शकतात.'],
+        previewRows: [],
+      };
+    }
+
+    const summary: WaterSourceImportSummary = {
+      totalRows: rows.length,
+      validRows: 0,
+      invalidRows: 0,
+      duplicateRows: 0,
+      sourcesCreated: 0,
+      errors: [],
+      previewRows: [],
+    };
+
+    const existingSources = this.sources;
+    const validatedEntries: Array<{
+      village: VillageMaster;
+      sourceId?: string;
+      sourceCode?: string;
+      sourceName: string;
+      sourceType: string;
+      sampleTypeIds: string[];
+      locationAddress: string;
+      remarks?: string;
+    }> = [];
+
+    rows.forEach((r, idx) => {
+      const rowNum = idx + 1;
+      const issues: string[] = [];
+      const vilIdentifier = (r.villageNameOrCode || '').trim();
+      const srcName = (r.sourceName || '').trim();
+      const rawSrcType = (r.sourceType || 'विहीर').trim();
+      const rawSampleType = (r.sampleType || 'BOTH').trim().toUpperCase();
+      const loc = (r.locationAddress || '').trim();
+      const customId = (r.sourceId || '').trim();
+      const customCode = (r.sourceCode || r.sourceId || '').trim();
+
+      if (!vilIdentifier) issues.push('गाव नाव किंवा कोड आवश्यक आहे.');
+      if (!srcName) issues.push('स्त्रोत नाव आवश्यक आहे.');
+
+      // Find Village
+      const village = this.villages.find(
+        (v) =>
+          v.name.toLowerCase() === vilIdentifier.toLowerCase() ||
+          v.code.toLowerCase() === vilIdentifier.toLowerCase() ||
+          (v.englishName && v.englishName.toLowerCase() === vilIdentifier.toLowerCase())
+      );
+
+      if (!village && vilIdentifier) {
+        issues.push(`गाव "${vilIdentifier}" सिस्टीममध्ये सापडले नाही. आधी गाव जोडा किंवा बरोबर नाव प्रविष्ट करा.`);
+      }
+
+      // Check duplicates by ID or by village + name
+      const isDuplicate = village
+        ? existingSources.some(
+            (s) =>
+              (customId && s.id.toLowerCase() === customId.toLowerCase()) ||
+              (s.villageId === village.id &&
+                s.sourceName.toLowerCase() === srcName.toLowerCase() &&
+                s.isActive)
+          )
+        : false;
+
+      let status: 'VALID' | 'INVALID' | 'DUPLICATE' = 'VALID';
+
+      if (issues.length > 0) {
+        status = 'INVALID';
+        summary.invalidRows++;
+        summary.errors.push(`ओळ ${rowNum}: ${issues.join(', ')}`);
+      } else if (isDuplicate) {
+        status = 'DUPLICATE';
+        summary.duplicateRows++;
+        issues.push(customId ? `स्त्रोत आयडी "${customId}" किंवा नाव आधीपासून अस्तित्वात आहे.` : `या गावामध्ये "${srcName}" नावाचा स्त्रोत आधीपासून अस्तित्वात आहे.`);
+      } else if (village) {
+        summary.validRows++;
+        let targetTypeIds: string[] = ['ST-001', 'ST-002'];
+        if (rawSampleType === 'ST-001' || rawSampleType.includes('BIO') || rawSampleType.includes('जैविक')) {
+          targetTypeIds = ['ST-001'];
+        } else if (rawSampleType === 'ST-002' || rawSampleType.includes('CHM') || rawSampleType.includes('रासायनिक')) {
+          targetTypeIds = ['ST-002'];
+        }
+
+        validatedEntries.push({
+          village,
+          sourceId: customId || undefined,
+          sourceCode: customCode || undefined,
+          sourceName: srcName,
+          sourceType: rawSrcType,
+          sampleTypeIds: targetTypeIds,
+          locationAddress: loc || `${village.name}, ता. औसा`,
+          remarks: r.remarks?.trim() || 'जुना डेटा आयात द्वारे नोंदणीकृत',
+        });
+      }
+
+      summary.previewRows.push({
+        rowNumber: rowNum,
+        sourceId: customId || undefined,
+        sourceCode: customCode || undefined,
+        villageNameOrCode: vilIdentifier,
+        subcenterName: village?.subcenterName || r.subcenterName || '',
+        sourceName: srcName,
+        sourceType: rawSrcType,
+        sampleType: rawSampleType,
+        locationAddress: loc,
+        remarks: r.remarks,
+        status,
+        issues,
+        resolvedVillageId: village?.id,
+        resolvedVillageName: village?.name,
+        resolvedSubcenterId: village?.subcenterId,
+        resolvedSubcenterName: village?.subcenterName,
+      });
+    });
+
+    // Execute atomic creation
+    if (validatedEntries.length > 0) {
+      for (const entry of validatedEntries) {
+        for (const stId of entry.sampleTypeIds) {
+          const sampleType = this.sampleTypes.find((st) => st.id === stId);
+          const prefix = entry.village.code || 'SRC';
+          let seq = this.sources.filter((s) => s.villageId === entry.village.id).length + 1;
+          
+          let newId = entry.sourceId;
+          if (!newId) {
+            newId = `SRC-${prefix}-${String(seq).padStart(3, '0')}`;
+            while (this.sources.some((s) => s.id === newId)) {
+              seq++;
+              newId = `SRC-${prefix}-${String(seq).padStart(3, '0')}`;
+            }
+          }
+
+          let newCode = entry.sourceCode || (entry.sourceId ? entry.sourceId : `SRC-${seq}`);
+
+          const newSource: SourceMaster = {
+            id: newId,
+            villageId: entry.village.id,
+            villageName: entry.village.name,
+            sampleTypeId: stId,
+            sampleTypeName: sampleType ? sampleType.name : (stId === 'ST-001' ? 'Water Sample – Bacteriological Examination' : 'Water Sample – Chemical Examination'),
+            sourceName: entry.sourceName,
+            sourceCode: newCode,
+            sourceType: entry.sourceType,
+            locationAddress: entry.locationAddress,
+            remarks: entry.remarks,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          this.sources.push(newSource);
+          summary.sourcesCreated++;
+        }
+      }
+
+      saveToStorage(STORAGE_KEYS.SOURCES, this.sources);
+
+      this.logAudit({
+        action: 'CREATE',
+        tableName: 'sources',
+        recordId: 'BULK-WATER-SOURCES',
+        summary: `पाणी स्त्रोत बल्क आयात: ${summary.sourcesCreated} नवीन स्त्रोत रेकॉर्ड्स तयार केले.`,
+        newData: { sourcesCreated: summary.sourcesCreated },
+      });
+
+      this.notifyListeners();
+    }
+
+    return summary;
+  }
+
+  // ==========================================
+  // BULK IMPORT FOR HISTORICAL SAMPLES (ALL TYPES)
+  // ==========================================
+  importHistoricalSamples(rows: SampleImportRow[]): SampleImportSummary {
+    const user = this.getCurrentUser();
+    if (user.role !== 'ADMIN') {
+      return {
+        totalRows: rows.length,
+        validRows: 0,
+        invalidRows: rows.length,
+        duplicateRows: 0,
+        samplesCreated: 0,
+        errors: ['केवळ प्रशासक (Admin) जुने नमुने आयात करू शकतात.'],
+        previewRows: [],
+      };
+    }
+
+    const summary: SampleImportSummary = {
+      totalRows: rows.length,
+      validRows: 0,
+      invalidRows: 0,
+      duplicateRows: 0,
+      samplesCreated: 0,
+      errors: [],
+      previewRows: [],
+    };
+
+    const validatedSamples: SampleRecord[] = [];
+
+    rows.forEach((r, idx) => {
+      const rowNum = idx + 1;
+      const issues: string[] = [];
+
+      // Determine sample type
+      let sampleTypeId = (r.sampleTypeId || '').trim();
+      if (!sampleTypeId) {
+        issues.push('नमुना प्रकार आवश्यक आहे.');
+      } else {
+        // Map common aliases
+        const stLower = sampleTypeId.toLowerCase();
+        if (stLower.includes('bio') || stLower.includes('जैविक') || stLower === 'st-001' || stLower === 'ws-bio') {
+          sampleTypeId = 'ST-001';
+        } else if (stLower.includes('chm') || stLower.includes('chem') || stLower.includes('रासायनिक') || stLower === 'st-002' || stLower === 'ws-chm') {
+          sampleTypeId = 'ST-002';
+        } else if (stLower.includes('malaria') || stLower.includes('हिवताप') || stLower.includes('smear') || stLower === 'st-003' || stLower === 'bs') {
+          sampleTypeId = 'ST-003';
+        } else if (stLower.includes('tcl') || stLower.includes('bleaching') || stLower.includes('पावडर') || stLower === 'st-004') {
+          sampleTypeId = 'ST-004';
+        } else if (stLower.includes('salt') || stLower.includes('मीठ') || stLower.includes('iodine') || stLower === 'st-005') {
+          sampleTypeId = 'ST-005';
+        } else if (stLower.includes('dengue') || stLower.includes('डेंग्यू') || stLower.includes('chikungunya') || stLower === 'st-006') {
+          sampleTypeId = 'ST-006';
+        } else if (stLower.includes('measles') || stLower.includes('गोवर') || stLower.includes('rubella') || stLower === 'st-007') {
+          sampleTypeId = 'ST-007';
+        }
+      }
+
+      const sampleType = this.sampleTypes.find((st) => st.id === sampleTypeId);
+      if (!sampleType && sampleTypeId) {
+        issues.push(`अवैध नमुना प्रकार: ${sampleTypeId}`);
+      }
+
+      // Date
+      const dateStr = (r.collectionDate || '').trim();
+      if (!dateStr || isNaN(Date.parse(dateStr))) {
+        issues.push('वैध संकलन तारीख (YYYY-MM-DD) आवश्यक आहे.');
+      }
+
+      // Village
+      const vilNameInput = (r.villageName || '').trim();
+      if (!vilNameInput) {
+        issues.push('गाव नाव आवश्यक आहे.');
+      }
+
+      const village = this.villages.find(
+        (v) =>
+          v.name.toLowerCase() === vilNameInput.toLowerCase() ||
+          v.code.toLowerCase() === vilNameInput.toLowerCase() ||
+          (v.englishName && v.englishName.toLowerCase() === vilNameInput.toLowerCase())
+      );
+
+      if (!village && vilNameInput) {
+        issues.push(`गाव "${vilNameInput}" सिस्टीममध्ये उपलब्ध नाही.`);
+      }
+
+      // Check duplicates
+      let isDuplicate = false;
+      if (r.sampleId && this.samples.some((s) => s.id === r.sampleId)) {
+        isDuplicate = true;
+        issues.push(`नमुना आयडी "${r.sampleId}" आधीपासून नोंदवलेला आहे.`);
+      }
+
+      let status: 'VALID' | 'INVALID' | 'DUPLICATE' = 'VALID';
+
+      if (issues.length > 0) {
+        status = 'INVALID';
+        summary.invalidRows++;
+        summary.errors.push(`ओळ ${rowNum}: ${issues.join(', ')}`);
+      } else if (isDuplicate) {
+        status = 'DUPLICATE';
+        summary.duplicateRows++;
+      } else if (sampleType && village) {
+        summary.validRows++;
+
+        const newId = r.sampleId || this.generateSampleId(sampleType.id);
+
+        // Find matching water source if applicable
+        let matchedSource: SourceMaster | undefined;
+        const targetSourceId = (r.sourceId || r.sourceCode || '').trim();
+
+        if (targetSourceId) {
+          // 1. First priority: match by exact Source ID or sourceCode
+          matchedSource = this.sources.find(
+            (s) =>
+              s.id.toLowerCase() === targetSourceId.toLowerCase() ||
+              s.sourceCode.toLowerCase() === targetSourceId.toLowerCase()
+          );
+        }
+
+        // 2. Second priority: match by village + sourceName
+        if (!matchedSource && r.sourceName) {
+          matchedSource = this.sources.find(
+            (s) =>
+              s.villageId === village.id &&
+              s.sourceName.toLowerCase() === r.sourceName!.trim().toLowerCase()
+          );
+        }
+
+        // 3. If sourceId is given or water sample needs a source, but doesn't exist yet, auto-register it
+        if (!matchedSource && (sampleType.id === 'ST-001' || sampleType.id === 'ST-002') && (targetSourceId || r.sourceName)) {
+          const finalSrcId = targetSourceId || `SRC-${village.code || 'BHD'}-${String(this.sources.filter(s => s.villageId === village.id).length + 1).padStart(3, '0')}`;
+          const finalSrcName = r.sourceName?.trim() || `पाणी स्त्रोत (${targetSourceId})`;
+          const finalSrcType = r.sourceType?.trim() || 'विहीर';
+
+          matchedSource = {
+            id: finalSrcId,
+            villageId: village.id,
+            villageName: village.name,
+            sampleTypeId: sampleType.id,
+            sampleTypeName: sampleType.name,
+            sourceName: finalSrcName,
+            sourceCode: targetSourceId || finalSrcId,
+            sourceType: finalSrcType,
+            locationAddress: `${village.name}, ता. औसा`,
+            remarks: 'जुना नमुना डेटा आयातीदरम्यान स्वयंचलित जोडला',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          this.sources.push(matchedSource);
+          saveToStorage(STORAGE_KEYS.SOURCES, this.sources);
+        }
+
+        const subcenter = this.subcenters.find((sc) => sc.id === village.subcenterId);
+
+        // Determine status
+        let finalStatus: SampleRecord['status'] = 'Ready for Dispatch';
+        if (r.result && r.result.trim().length > 0) {
+          finalStatus = 'Report Updated';
+        } else if (r.sendingLetterNumber) {
+          finalStatus = 'Dispatched';
+        }
+
+        let parsedSex: SampleRecord['sex'] = undefined;
+        if (r.sex) {
+          const s = r.sex.trim().toLowerCase();
+          if (s === 'male' || s === 'पुरुष' || s === 'm') parsedSex = 'पुरुष';
+          else if (s === 'female' || s === 'स्त्री' || s === 'f') parsedSex = 'स्त्री';
+          else parsedSex = 'इतर';
+        } else if (r.patientName) {
+          parsedSex = 'पुरुष';
+        }
+
+        const sampleRecord: SampleRecord = {
+          id: newId,
+          sampleTypeId: sampleType.id,
+          sampleTypeName: sampleType.name,
+          collectionDate: dateStr,
+          sendingDate: r.sendingDate || dateStr,
+          reportReceivedDate: r.reportReceivedDate || (r.result ? dateStr : undefined),
+          reportDate: r.reportReceivedDate || (r.result ? dateStr : undefined),
+          reportUpdateDate: r.result ? (r.reportReceivedDate || dateStr) : undefined,
+
+          villageId: village.id,
+          villageName: village.name,
+          subcenterId: village.subcenterId,
+          subcenterName: village.subcenterName,
+          subcenter: village.subcenterName,
+          phcName: 'भादा',
+          taluka: village.taluka || 'औसा',
+          district: village.district || 'लातूर',
+
+          sourceId: matchedSource?.id || targetSourceId || undefined,
+          sourceName: r.sourceName?.trim() || matchedSource?.sourceName || (sampleType.id === 'ST-001' || sampleType.id === 'ST-002' ? 'सार्वजनिक स्त्रोत' : undefined),
+          sourceType: r.sourceType?.trim() || matchedSource?.sourceType || (sampleType.id === 'ST-001' || sampleType.id === 'ST-002' ? 'विहीर' : undefined),
+          bottleNumber: r.bottleNumber !== undefined ? r.bottleNumber : undefined,
+          sampleCodeOrBottleNo: r.bottleNumber ? `BTL-${r.bottleNumber}` : undefined,
+
+          patientName: r.patientName?.trim(),
+          age: r.age ? Number(r.age) : undefined,
+          sex: parsedSex,
+          mobile: r.mobile?.trim(),
+          contactNumber: r.mobile?.trim(),
+          patientAddress: r.patientAddress?.trim() || (r.patientName ? `${village.name}, ता. औसा` : undefined),
+
+          availableChlorinePercent: r.availableChlorinePercent ? Number(r.availableChlorinePercent) : undefined,
+          chlorineContentPercent: r.availableChlorinePercent ? Number(r.availableChlorinePercent) : undefined,
+          iodinePpm: r.iodinePpm ? Number(r.iodinePpm) : undefined,
+
+          sendingLetterNumber: r.sendingLetterNumber?.trim(),
+          laboratoryName: r.laboratoryName?.trim() || sampleType.defaultLaboratory,
+          status: finalStatus,
+          result: r.result?.trim(),
+          remarks: r.remarks?.trim() || 'जुना ऐतिहासिक डेटा आयात (Historical Data Import)',
+
+          createdBy: user.id,
+          createdByName: user.name,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isActive: true,
+        };
+
+        validatedSamples.push(sampleRecord);
+      }
+
+      summary.previewRows.push({
+        ...r,
+        rowNumber: rowNum,
+        sampleTypeName: sampleType?.name || r.sampleTypeId,
+        status,
+        issues,
+      });
+    });
+
+    // Execute bulk insertion
+    if (validatedSamples.length > 0) {
+      this.samples.push(...validatedSamples);
+      saveToStorage(STORAGE_KEYS.SAMPLES, this.samples);
+
+      summary.samplesCreated = validatedSamples.length;
+
+      this.logAudit({
+        action: 'CREATE',
+        tableName: 'samples',
+        recordId: 'BULK-HISTORICAL-SAMPLES',
+        summary: `जुना डेटा आयात: ${validatedSamples.length} नमुने यशस्वीरित्या नोंदवले.`,
+        newData: { count: validatedSamples.length },
+      });
+
+      this.notifyListeners();
+    }
+
+    return summary;
+  }
+
+  // ==========================================
+  // FULL SYSTEM BACKUP & RESTORE
+  // ==========================================
+  exportFullSystemBackup(): string {
+    const backupData = {
+      system: 'PHC_BHADA_SAMPLE_MASTER',
+      version: '3.0',
+      exportedAt: new Date().toISOString(),
+      exportedBy: this.currentUser?.name || 'Admin',
+      data: {
+        users: this.users,
+        subcenters: this.subcenters,
+        villages: this.villages,
+        sources: this.sources,
+        sampleTypes: this.sampleTypes,
+        samples: this.samples,
+        sendingLetters: this.sendingLetters,
+        dispatchSamples: this.dispatchSamples,
+        auditLogs: this.auditLogs,
+      },
+    };
+
+    return JSON.stringify(backupData, null, 2);
+  }
+
+  restoreFullSystemBackup(
+    backupJsonString: string,
+    mode: 'MERGE' | 'REPLACE' = 'MERGE'
+  ): { success: boolean; message: string; counts: Record<string, number> } {
+    const user = this.getCurrentUser();
+    if (user.role !== 'ADMIN') {
+      return { success: false, message: 'केवळ प्रशासक (Admin) बॅकअप रिस्टोअर करू शकतात.', counts: {} };
+    }
+
+    try {
+      const parsed = JSON.parse(backupJsonString);
+      if (!parsed || !parsed.data) {
+        return { success: false, message: 'अवैध बॅकअप फाइल स्वरूप. "data" ऑब्जेक्ट आढळला नाही.', counts: {} };
+      }
+
+      const { data } = parsed;
+      const counts: Record<string, number> = {
+        subcenters: 0,
+        villages: 0,
+        sources: 0,
+        samples: 0,
+        sendingLetters: 0,
+      };
+
+      if (mode === 'REPLACE') {
+        if (Array.isArray(data.subcenters)) this.subcenters = data.subcenters;
+        if (Array.isArray(data.villages)) this.villages = data.villages;
+        if (Array.isArray(data.sources)) this.sources = data.sources;
+        if (Array.isArray(data.samples)) this.samples = data.samples;
+        if (Array.isArray(data.sendingLetters)) this.sendingLetters = data.sendingLetters;
+        if (Array.isArray(data.sampleTypes)) this.sampleTypes = data.sampleTypes;
+        if (Array.isArray(data.users)) this.users = data.users;
+
+        counts.subcenters = this.subcenters.length;
+        counts.villages = this.villages.length;
+        counts.sources = this.sources.length;
+        counts.samples = this.samples.length;
+        counts.sendingLetters = this.sendingLetters.length;
+      } else {
+        // MERGE Mode
+        if (Array.isArray(data.subcenters)) {
+          for (const sc of data.subcenters) {
+            if (!this.subcenters.some((s) => s.id === sc.id || s.subcenterCode === sc.subcenterCode)) {
+              this.subcenters.push(sc);
+              counts.subcenters++;
+            }
+          }
+        }
+
+        if (Array.isArray(data.villages)) {
+          for (const vil of data.villages) {
+            if (!this.villages.some((v) => v.id === vil.id || v.code === vil.code)) {
+              this.villages.push(vil);
+              counts.villages++;
+            }
+          }
+        }
+
+        if (Array.isArray(data.sources)) {
+          for (const src of data.sources) {
+            if (!this.sources.some((s) => s.id === src.id)) {
+              this.sources.push(src);
+              counts.sources++;
+            }
+          }
+        }
+
+        if (Array.isArray(data.samples)) {
+          for (const smp of data.samples) {
+            if (!this.samples.some((s) => s.id === smp.id)) {
+              this.samples.push(smp);
+              counts.samples++;
+            }
+          }
+        }
+
+        if (Array.isArray(data.sendingLetters)) {
+          for (const ltr of data.sendingLetters) {
+            if (!this.sendingLetters.some((l) => l.id === ltr.id)) {
+              this.sendingLetters.push(ltr);
+              counts.sendingLetters++;
+            }
+          }
+        }
+      }
+
+      saveToStorage(STORAGE_KEYS.SUBCENTERS, this.subcenters);
+      saveToStorage(STORAGE_KEYS.VILLAGES, this.villages);
+      saveToStorage(STORAGE_KEYS.SOURCES, this.sources);
+      saveToStorage(STORAGE_KEYS.SAMPLES, this.samples);
+      saveToStorage(STORAGE_KEYS.SENDING_LETTERS, this.sendingLetters);
+      saveToStorage(STORAGE_KEYS.SAMPLE_TYPES, this.sampleTypes);
+      saveToStorage(STORAGE_KEYS.USERS, this.users);
+
+      this.logAudit({
+        action: 'RESTORE',
+        tableName: 'samples',
+        recordId: 'SYSTEM-BACKUP-RESTORE',
+        summary: `संपूर्ण सिस्टीम बॅकअप रिस्टोअर (${mode}): ${counts.samples} नमुने, ${counts.sources} स्त्रोत, ${counts.villages} गावे आयात झाली.`,
+        newData: counts,
+      });
+
+      this.notifyListeners();
+
+      return {
+        success: true,
+        message: `बॅकअप यशस्वीरीत्या रिस्टोअर झाला! (${counts.samples} नमुने, ${counts.sources} पाणी स्त्रोत, ${counts.villages} गावे, ${counts.subcenters} उपकेंद्रे)`,
+        counts,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'बॅकअप फाइल प्रक्रिया करताना त्रुटी आली.';
+      return { success: false, message: `त्रुटी: ${msg}`, counts: {} };
+    }
   }
 
   // ==========================================
@@ -5078,6 +3880,73 @@ class ClientDataStore {
       validMappedSamples: validCount,
       unmappedSamples: unmapped,
     };
+  }
+
+  // Purge all dummy, temporary, test sample records and dispatch letters
+  purgeAllDummyAndTemporaryData(user?: User): { samplesDeleted: number; lettersDeleted: number } {
+    const samplesCount = this.samples.length;
+    const lettersCount = this.sendingLetters.length;
+
+    this.samples = [];
+    this.sendingLetters = [];
+    this.dispatchSamples = [];
+    this.auditLogs = [];
+    this.syncQueue = [];
+
+    saveToStorage(STORAGE_KEYS.SAMPLES, []);
+    saveToStorage(STORAGE_KEYS.SENDING_LETTERS, []);
+    saveToStorage(STORAGE_KEYS.DISPATCH_SAMPLES, []);
+    saveToStorage(STORAGE_KEYS.AUDIT_LOGS, []);
+    saveToStorage(STORAGE_KEYS.SYNC_QUEUE, []);
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.removeItem('phc_bhada_samples_v2');
+        localStorage.removeItem('phc_bhada_letters_v2');
+        localStorage.removeItem('phc_bhada_dispatch_samples_v2');
+        localStorage.removeItem('phc_bhada_audit_logs_v2');
+        localStorage.removeItem('phc_bhada_sync_queue_v2');
+        localStorage.removeItem('phc_bhada_samples');
+        localStorage.removeItem('phc_bhada_letters');
+      } catch (e) {
+        console.error('Storage clear error:', e);
+      }
+    }
+
+    this.logAudit({
+      action: 'DELETE',
+      tableName: 'samples',
+      recordId: 'PURGE_ALL_DUMMY',
+      summary: `सर्व तात्पुरते व डमी नमुने आणि जावक पत्रे यशस्वीरित्या हटवण्यात आली (${samplesCount} नमुने, ${lettersCount} पत्रे)`,
+    });
+
+    this.notifyListeners();
+    return { samplesDeleted: samplesCount, lettersDeleted: lettersCount };
+  }
+
+  // Purge all subcenters, villages, and water sources masters
+  purgeAllDummyMasters(user?: User): { subcentersDeleted: number; villagesDeleted: number; sourcesDeleted: number } {
+    const scCount = this.subcenters.length;
+    const vilCount = this.villages.length;
+    const srcCount = this.sources.length;
+
+    this.subcenters = [];
+    this.villages = [];
+    this.sources = [];
+
+    saveToStorage(STORAGE_KEYS.SUBCENTERS, []);
+    saveToStorage(STORAGE_KEYS.VILLAGES, []);
+    saveToStorage(STORAGE_KEYS.SOURCES, []);
+
+    this.logAudit({
+      action: 'DELETE',
+      tableName: 'subcenters',
+      recordId: 'PURGE_ALL_MASTERS',
+      summary: `सर्व उपकेंद्रे, गावे आणि पाणी स्त्रोत मास्टर डेटाबेस मधून काढून टाकण्यात आले (${scCount} उपकेंद्रे, ${vilCount} गावे, ${srcCount} स्त्रोत)`,
+    });
+
+    this.notifyListeners();
+    return { subcentersDeleted: scCount, villagesDeleted: vilCount, sourcesDeleted: srcCount };
   }
 }
 

@@ -21,6 +21,7 @@ import {
   Sparkles,
   RefreshCw,
   HeartPulse,
+  UploadCloud,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import { clientStore } from '../services/clientStore';
@@ -118,6 +119,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       label: 'अहवाल व आकडेवारी',
       subLabel: 'Analytics',
       icon: <BarChart3 className="w-4 h-4" />,
+      adminOnly: false,
+    },
+    {
+      id: 'data-migration',
+      label: 'जुना डेटा आयात',
+      subLabel: 'Data Upload',
+      icon: <UploadCloud className="w-4 h-4 text-emerald-400" />,
       adminOnly: false,
     },
     {

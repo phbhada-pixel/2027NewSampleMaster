@@ -126,6 +126,9 @@ export interface SampleRecord {
   mfdDate?: string;
   expDate?: string;
   sampleDescription?: string;
+  chlorineContentPercent?: number;
+  availableChlorinePercent?: number;
+  iodinePpm?: number;
   
   // Patient Serum specific (Measles / Dengue / Chikungunya)
   patientId?: string;
@@ -334,6 +337,89 @@ export interface MasterImportSummary {
   invalidRows: number;
   duplicateRows: number;
   rows: MasterImportRow[];
+}
+
+export interface WaterSourceImportRow {
+  rowNumber?: number;
+  sourceId?: string;
+  sourceCode?: string;
+  villageNameOrCode: string;
+  subcenterName?: string;
+  sourceName: string;
+  sourceType?: string;
+  sampleType?: string; // 'ST-001' | 'ST-002' | 'BOTH' | 'पाणी जैविक' | 'पाणी रासायनिक'
+  locationAddress?: string;
+  remarks?: string;
+  status?: 'VALID' | 'INVALID' | 'DUPLICATE';
+  issues?: string[];
+  resolvedVillageId?: string;
+  resolvedVillageName?: string;
+  resolvedSubcenterId?: string;
+  resolvedSubcenterName?: string;
+}
+
+export interface WaterSourceImportSummary {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+  sourcesCreated: number;
+  errors: string[];
+  previewRows: WaterSourceImportRow[];
+}
+
+export interface SampleImportRow {
+  rowNumber?: number;
+  sampleId?: string;
+  sampleTypeId: string; // 'ST-001', 'ST-002', etc. or Marathi name
+  sampleTypeName?: string;
+  collectionDate: string; // YYYY-MM-DD
+  villageName: string;
+  subcenterName?: string;
+  
+  // Water / General Source
+  sourceId?: string;
+  sourceCode?: string;
+  sourceName?: string;
+  sourceType?: string;
+  bottleNumber?: string | number;
+  
+  // Patient details (Dengue, Malaria, Measles)
+  patientName?: string;
+  age?: number;
+  sex?: string;
+  mobile?: string;
+  patientAddress?: string;
+  feverOnsetDays?: number;
+  symptomsSummary?: string;
+  
+  // Chemical / TCL / Salt details
+  availableChlorinePercent?: number;
+  iodinePpm?: number;
+  
+  // Dispatch / Letter / Lab
+  sendingLetterNumber?: string;
+  sendingDate?: string;
+  laboratoryName?: string;
+  
+  // Results
+  reportReceivedDate?: string;
+  result?: string; // 'पिण्यास योग्य' | 'पिण्यास अयोग्य' | 'पॉझिटिव्ह' | 'निगेटिव्ह' | 'मानक' | 'अमानक'
+  remarks?: string;
+  
+  // Status
+  status?: 'VALID' | 'INVALID' | 'DUPLICATE';
+  issues?: string[];
+}
+
+export interface SampleImportSummary {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+  samplesCreated: number;
+  errors: string[];
+  previewRows: SampleImportRow[];
 }
 
 export interface SubcenterVillageImportRow {

@@ -41,6 +41,10 @@ interface SampleEntryModuleProps {
   onSampleCreated?: (sample: SampleRecord) => void;
   onNavigate?: (tab: string, filter?: Record<string, string>) => void;
   initialSampleTypeId?: string;
+  initialVillageId?: string;
+  initialSubcenterId?: string;
+  initialSourceId?: string;
+  onBack?: () => void;
 }
 
 export interface SelectedWaterSourceItem {
@@ -59,6 +63,10 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
   onSampleCreated,
   onNavigate,
   initialSampleTypeId,
+  initialVillageId,
+  initialSubcenterId,
+  initialSourceId,
+  onBack,
 }) => {
   const sampleTypes = clientStore.getSampleTypes();
   const subcenters = clientStore.getSubcenters();
@@ -67,8 +75,15 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
   const [selectedTypeId, setSelectedTypeId] = useState<string>(
     initialSampleTypeId || sampleTypes[0]?.id || 'ST-001'
   );
-  const [selectedSubcenterId, setSelectedSubcenterId] = useState<string>('ALL');
-  const [selectedVillageId, setSelectedVillageId] = useState<string>(villages[0]?.id || '');
+  const [selectedSubcenterId, setSelectedSubcenterId] = useState<string>(initialSubcenterId || 'ALL');
+  const [selectedVillageId, setSelectedVillageId] = useState<string>(initialVillageId || villages[0]?.id || '');
+  
+  React.useEffect(() => {
+    if (initialSampleTypeId) setSelectedTypeId(initialSampleTypeId);
+    if (initialSubcenterId) setSelectedSubcenterId(initialSubcenterId);
+    if (initialVillageId) setSelectedVillageId(initialVillageId);
+    if (initialSourceId) setSelectedSourceId(initialSourceId);
+  }, [initialSampleTypeId, initialSubcenterId, initialVillageId, initialSourceId]);
   
   // Filtered villages strictly based on selected subcenter
   const filteredVillages =
@@ -841,11 +856,15 @@ export const SampleEntryModule: React.FC<SampleEntryModuleProps> = ({
                 onChange={(e) => handleVillageChange(e.target.value)}
                 className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
               >
-                {filteredVillages.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name} ({v.englishName}) — {v.subcenterName || v.subcenter}
-                  </option>
-                ))}
+                {filteredVillages.length === 0 ? (
+                  <option value="">-- कोणतेही गाव उपलब्ध नाही (कृपया मास्टर / डेटा आयात मधून गावे जोडा) --</option>
+                ) : (
+                  filteredVillages.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.englishName}) — {v.subcenterName || v.subcenter}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 

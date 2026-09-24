@@ -26,6 +26,7 @@ import {
   Check,
   Copy,
   Info,
+  Trash2,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import { MasterBulkImport } from './MasterBulkImport';
@@ -903,6 +904,69 @@ export const MasterAdminModule: React.FC<MasterAdminModuleProps> = ({ currentUse
               <div className="text-[11px] text-slate-500 mt-1">
                 रिमोट Supabase डॅशबोर्ड मधील SQL Editor मध्ये सदर फाईल रन करून सर्व टेबल्स व RLS धोरणे त्वरित सक्रिय करता येतील.
               </div>
+            </div>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="bg-rose-50 border border-rose-200 rounded-lg p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-rose-200">
+              <div>
+                <h4 className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-rose-600" />
+                  सर्व तात्पुरते नमुने काढून टाका (Purge Dummy Samples)
+                </h4>
+                <p className="text-[11px] text-rose-700 mt-0.5">
+                  चाचणीसाठी तयार केलेले सर्व नमुने (Samples) व जावक पत्रे काढून डेटाबेस स्वच्छ करा.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      'सावधान: सर्व डमी नमुने व चाचणी पत्रे हटवली जातील. तुम्हाला खात्री आहे का?'
+                    )
+                  ) {
+                    const res = clientStore.purgeAllDummyAndTemporaryData(currentUser);
+                    setNotification(
+                      `सर्व डमी नमुने काढून टाकले (${res.samplesDeleted} नमुने, ${res.lettersDeleted} जावक पत्रे).`
+                    );
+                    setTimeout(() => setNotification(''), 4000);
+                  }
+                }}
+                className="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+              >
+                डमी नमुने डिलीट करा
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  सर्व डमी उपकेंद्रे, गावे व स्त्रोत काढून टाका (Purge Dummy Masters)
+                </h4>
+                <p className="text-[11px] text-rose-700 mt-0.5">
+                  सर्व उपकेंद्रे, गावे आणि पाणी स्त्रोत मास्टर नोंदी काढून टाका (नवीन CSV अपलोड करण्यापूर्वी उपयुक्त).
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      'सावधान: सर्व उपकेंद्रे, गावे व पाणी स्त्रोत हटवले जातील. तुम्हाला खात्री आहे का?'
+                    )
+                  ) {
+                    const res = clientStore.purgeAllDummyMasters(currentUser);
+                    setNotification(
+                      `सर्व मास्टर डेटा काढून टाकला (${res.subcentersDeleted} उपकेंद्रे, ${res.villagesDeleted} गावे, ${res.sourcesDeleted} स्त्रोत).`
+                    );
+                    setTimeout(() => setNotification(''), 4000);
+                  }
+                }}
+                className="bg-rose-800 hover:bg-rose-900 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+              >
+                सर्व मास्टर डेटा साफ करा
+              </button>
             </div>
           </div>
         </div>

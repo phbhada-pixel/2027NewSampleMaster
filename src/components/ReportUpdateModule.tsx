@@ -25,9 +25,22 @@ import {
 
 interface ReportUpdateModuleProps {
   currentUser: User;
+  initialFilter?: {
+    sampleTypeId?: string;
+    villageId?: string;
+    sampleId?: string;
+    statusFilter?: string;
+  };
+  onNavigate?: (tab: string, filter?: Record<string, string>) => void;
+  onBack?: () => void;
 }
 
-export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentUser }) => {
+export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({
+  currentUser,
+  initialFilter,
+  onNavigate,
+  onBack,
+}) => {
   const sampleTypes = clientStore.getSampleTypes();
   const villages = clientStore.getVillages();
   const existingLetters = clientStore.getSendingLetters();
@@ -37,14 +50,39 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({ currentU
 
   // Search & Filter State (including Sent Date based search)
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedTypeId, setSelectedTypeId] = useState<string>('ALL');
-  const [selectedVillageId, setSelectedVillageId] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [selectedTypeId, setSelectedTypeId] = useState<string>(initialFilter?.sampleTypeId || 'ALL');
+  const [selectedVillageId, setSelectedVillageId] = useState<string>(initialFilter?.villageId || 'ALL');
+  const [statusFilter, setStatusFilter] = useState<string>(initialFilter?.statusFilter || 'ALL');
   const [filterSentDate, setFilterSentDate] = useState<string>('');
   const [filterLetterNumber, setFilterLetterNumber] = useState<string>('ALL');
 
   // Currently Editing Sample (Single Mode)
   const [editingSample, setEditingSample] = useState<SampleRecord | null>(null);
+
+  // Auto-select sample if provided in initialFilter
+  React.useEffect(() => {
+    if (initialFilter?.sampleId) {
+      const allSamples = clientStore.getSamples();
+      const target = allSamples.find((s) => s.id === initialFilter.sampleId);
+      if (target) {
+        setEditingSample(target);
+        setReportReceivedDate(target.reportReceivedDate || new Date().toISOString().split('T')[0]);
+        setReportNumber(target.reportNumber || '');
+        setResult(target.result || '');
+        setLaboratoryName(target.laboratoryName || 'जिल्हा सार्वजनिक आरोग्य प्रयोगशाळा (DPHL), लातूर');
+        setReportRemarks(target.reportRemarks || '');
+      }
+    }
+    if (initialFilter?.sampleTypeId) {
+      setSelectedTypeId(initialFilter.sampleTypeId);
+    }
+    if (initialFilter?.villageId) {
+      setSelectedVillageId(initialFilter.villageId);
+    }
+    if (initialFilter?.statusFilter) {
+      setStatusFilter(initialFilter.statusFilter);
+    }
+  }, [initialFilter]);
 
   // Form Fields for Lab Report Update (Single Mode)
   const [reportReceivedDate, setReportReceivedDate] = useState<string>(
