@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { clientStore } from '../services/clientStore';
 import {
   Activity,
@@ -39,6 +39,11 @@ interface DashboardModuleProps {
 }
 
 export const DashboardModule: React.FC<DashboardModuleProps> = ({ onNavigate, currentUser }) => {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    return clientStore.subscribe(() => setTick((t) => t + 1));
+  }, []);
+
   const stats = clientStore.getDashboardStats();
   const sampleTypes = clientStore.getSampleTypes();
   const allSamples = clientStore.getSamples();
@@ -60,9 +65,13 @@ export const DashboardModule: React.FC<DashboardModuleProps> = ({ onNavigate, cu
   // Today's date string
   const todayStr = new Date().toISOString().split('T')[0];
   const todaySamplesList = allSamples.filter((s) => s.collectionDate === todayStr);
-  const pendingSamplesList = allSamples.filter(
-    (s) => s.status !== 'Report Received' && s.status !== 'Report Updated'
+  
+  // Samples currently awaiting laboratory results
+  const pendingResultsSamples = allSamples.filter(
+    (s) => s.isActive !== false && !s.result && s.status !== 'Report Received' && s.status !== 'Report Updated' && s.status !== 'Closed'
   );
+  const pendingResultsCount = pendingResultsSamples.length;
+  const pendingSamplesList = pendingResultsSamples;
 
   const getSampleIcon = (codePrefix: string) => {
     switch (codePrefix) {
@@ -221,26 +230,34 @@ export const DashboardModule: React.FC<DashboardModuleProps> = ({ onNavigate, cu
           </div>
         </div>
 
-        {/* 5. Reports Pending */}
+        {/* 5. Pending Results Count Widget */}
         <div
-          onClick={() => {
-            if (stats.reportPendingCount > 0) {
-              setShowPendingModal(true);
-            } else {
-              onNavigate('report-update');
-            }
-          }}
-          className="group bg-white p-3.5 rounded-xl border border-rose-200 shadow-sm hover:border-rose-500 hover:shadow-md hover:bg-rose-50/30 transition-all cursor-pointer relative overflow-hidden"
-          title="प्रलंबित अहवाल पाहण्यासाठी व नोंदणी करण्यासाठी क्लिक करा"
+          onClick={() => onNavigate('report-update', { statusFilter: 'Pending' })}
+          className="group bg-gradient-to-br from-white to-rose-50/40 p-3.5 rounded-xl border-2 border-rose-300 shadow-sm hover:border-rose-600 hover:shadow-md hover:bg-rose-50/70 transition-all cursor-pointer relative overflow-hidden"
+          title="Pending Results: प्रयोगशाळा अहवाल निकाल प्रलंबित — थेट अहवाल नोंदणी मॉड्यूलवर जाण्यासाठी येथे क्लिक करा"
         >
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider group-hover:text-rose-800">अहवाल प्रलंबित</span>
-            <AlertCircle className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-900 group-hover:text-rose-700 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+              <span>Pending Results</span>
+            </span>
+            {/* Red badge displaying the number of samples currently awaiting laboratory results */}
+            <span
+              className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-black bg-rose-600 text-white shadow-xs animate-pulse"
+              title={`${pendingResultsCount} नमुने प्रयोगशाळा निकालाच्या प्रतीक्षेत`}
+            >
+              {pendingResultsCount}
+            </span>
           </div>
-          <div className="text-2xl font-black text-rose-800">{stats.reportPendingCount}</div>
-          <div className="text-[10px] text-rose-700 font-bold mt-1 flex items-center justify-between">
-            <span>अहवाल नोंदवा →</span>
-            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-baseline justify-between mt-1">
+            <div className="text-2xl font-black text-rose-900">{pendingResultsCount}</div>
+            <span className="text-[10px] text-rose-700 font-bold bg-rose-100/90 px-1.5 py-0.5 rounded border border-rose-200">
+              निकाल प्रतीक्षेत
+            </span>
+          </div>
+          <div className="text-[10px] text-rose-700 font-bold mt-1.5 flex items-center justify-between border-t border-rose-100 pt-1">
+            <span>अहवाल नोंदणीवर जा →</span>
+            <ArrowRight className="w-3 h-3 text-rose-600 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
 
@@ -258,6 +275,76 @@ export const DashboardModule: React.FC<DashboardModuleProps> = ({ onNavigate, cu
           <div className="text-[10px] text-emerald-700 font-semibold mt-1 flex items-center justify-between">
             <span>निकाल पहा</span>
             <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* PENDING RESULTS COUNT WIDGET (Clickable to jump directly to Report Update) */}
+      {/* ========================================================================= */}
+      <div
+        onClick={() => onNavigate('report-update', { statusFilter: 'Pending' })}
+        className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-rose-900 via-red-900 to-slate-900 p-4 sm:p-5 text-white shadow-md border-2 border-rose-500/50 hover:border-rose-400 hover:shadow-xl transition-all cursor-pointer"
+        title="Pending Results: प्रयोगशाळेकडून निकाल प्रतीक्षेत असलेले नमुने — थेट अहवाल नोंदणी मॉड्यूल उघडण्यासाठी येथे क्लिक करा"
+      >
+        <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-rose-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-rose-500/20 transition-all" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md bg-rose-950/80 text-rose-200 border border-rose-500/40 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <FlaskConical className="w-3.5 h-3.5 text-rose-400" />
+                प्रयोगशाळा संनियंत्रण कक्ष • Lab Results Surveillance
+              </span>
+              {/* Red Badge with Number of Samples Awaiting Laboratory Results */}
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black bg-red-600 text-white border border-red-300 shadow-md animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                <span>{pendingResultsCount}</span> नमुने निकाल प्रतीक्षेत (Pending Results)
+              </span>
+            </div>
+
+            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 group-hover:text-rose-100 transition-colors">
+              <span>Pending Results: प्रयोगशाळेकडून निकाल प्रतीक्षेत असलेले नमुने</span>
+            </h3>
+
+            <p className="text-xs text-rose-100/90 max-w-3xl leading-relaxed">
+              प्राथमिक आरोग्य केंद्र भादा अंतर्गत संकलित व प्रयोगशाळेस पाठविलेल्या एकूण{' '}
+              <span className="font-extrabold text-white underline mx-1">{pendingResultsCount} नमुन्यांचे</span>{' '}
+              प्रयोगशाळा तपासणी निकाल व अहवाल प्राप्त होणे बाकी आहे. थेट निकाल नोंदणी, बॅच अहवाल अथवा प्रमाणपत्र भरण्यासाठी क्लिक करा.
+            </p>
+
+            {/* Quick breakdown pills of pending types */}
+            {stats.byTypeSummary.some((t) => t.pending > 0) && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-rose-300 font-semibold">प्रकारनिहाय प्रतीक्षेत:</span>
+                {stats.byTypeSummary
+                  .filter((t) => t.pending > 0)
+                  .map((t) => (
+                    <span
+                      key={t.id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-950/70 border border-rose-700/50 text-[10px] text-rose-100"
+                    >
+                      <span>{t.name}:</span>
+                      <strong className="text-rose-200 font-bold">{t.pending}</strong>
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 self-stretch lg:self-auto justify-end">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate('report-update', { statusFilter: 'Pending' });
+              }}
+              className="w-full lg:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-rose-950 hover:bg-rose-50 font-black text-xs shadow-lg transition-all active:scale-95 group-hover:ring-2 group-hover:ring-white/80 cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4 text-rose-700" />
+              <span>अहवाल नोंदणी मॉड्यूलवर जा</span>
+              <ArrowRight className="w-3.5 h-3.5 text-rose-800 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
         </div>
       </div>

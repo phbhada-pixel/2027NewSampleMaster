@@ -2151,7 +2151,13 @@ class ClientDataStore {
     }
 
     if (filter?.status && filter.status !== 'ALL') {
-      list = list.filter((s) => s.status === filter.status);
+      if (filter.status === 'Pending' || filter.status === 'PENDING' || filter.status === 'Report Pending') {
+        list = list.filter(
+          (s) => !s.result && s.status !== 'Report Received' && s.status !== 'Report Updated' && s.status !== 'Closed'
+        );
+      } else {
+        list = list.filter((s) => s.status === filter.status);
+      }
     }
 
     if (filter?.collectionDate && filter.collectionDate !== 'ALL') {
@@ -3217,7 +3223,7 @@ class ClientDataStore {
       (s) => s.status === 'Dispatched' || s.status === 'Report Pending'
     ).length;
     const reportPendingCount = activeSamples.filter(
-      (s) => s.status === 'Dispatched' || s.status === 'Report Pending' || s.status === 'Ready for Dispatch'
+      (s) => !s.result && s.status !== 'Report Received' && s.status !== 'Report Updated' && s.status !== 'Closed'
     ).length;
     const reportReceivedCount = activeSamples.filter(
       (s) => s.status === 'Report Received' || s.status === 'Report Updated' || s.status === 'Closed'

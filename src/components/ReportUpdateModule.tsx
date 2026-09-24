@@ -512,6 +512,7 @@ export const ReportUpdateModule: React.FC<ReportUpdateModuleProps> = ({
               className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
             >
               <option value="ALL">सर्व स्थिती (All Status)</option>
+              <option value="Pending">प्रलंबित निकाल (Pending Lab Results - सर्व)</option>
               <option value="Dispatched">Dispatched (पाठविलेले)</option>
               <option value="Report Pending">Report Pending (प्रलंबित)</option>
               <option value="Report Received">Report Received (प्राप्त)</option>
