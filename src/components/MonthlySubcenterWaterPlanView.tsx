@@ -9,6 +9,7 @@ import {
   Clock,
   AlertTriangle,
   FileSpreadsheet,
+  FileText,
   Printer,
   ChevronDown,
   ChevronRight,
@@ -20,6 +21,7 @@ import {
   Layers,
   Sparkles,
 } from 'lucide-react';
+import { OfficialReportPdfModal } from './OfficialReportPdfModal';
 
 interface MonthlySubcenterWaterPlanViewProps {
   currentUser: User;
@@ -60,6 +62,7 @@ export const MonthlySubcenterWaterPlanView: React.FC<MonthlySubcenterWaterPlanVi
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'TESTED_ONLY' | 'PENDING_ONLY' | 'OVERDUE_ONLY'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'CARDS' | 'TABLE'>('CARDS');
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
 
   // Accordion open states
   const [expandedSubcenters, setExpandedSubcenters] = useState<Record<string, boolean>>({
@@ -189,6 +192,15 @@ export const MonthlySubcenterWaterPlanView: React.FC<MonthlySubcenterWaterPlanVi
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsPdfModalOpen(true)}
+              className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer ring-1 ring-rose-400/50"
+              title="अधिकृत शासकीय नमुना अहवाल PDF स्वरूपात जनरेट करा"
+            >
+              <FileText className="w-4 h-4 text-rose-100" />
+              <span>शासकीय अहवाल PDF</span>
+            </button>
             <button
               onClick={handlePrint}
               className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
@@ -815,6 +827,66 @@ export const MonthlySubcenterWaterPlanView: React.FC<MonthlySubcenterWaterPlanVi
           </div>
         </div>
       </div>
+
+      {/* Official Government Formatted PDF Modal */}
+      <OfficialReportPdfModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        reportTitle={`उपकेंद्रनिहाय मासिक पाणी स्त्रोत कृती आराखडा व गुणवत्ता अहवाल (${selectedMonthObj.name} ${selectedYear})`}
+        reportSubtitle="प्राथमिक आरोग्य केंद्र भादा, ता. औसा, जि. लातूर — सार्वजनिक आरोग्य विभाग"
+        documentNumber={`जा.क्र./प्राआकेंभादा/पाणी-आराखडा/${selectedYear}/${Math.floor(100 + Math.random() * 900)}`}
+        periodText={`${selectedMonthObj.name} ${selectedYear}`}
+        filterDetails={[
+          {
+            label: 'उपकेंद्र',
+            value:
+              selectedSubcenterId === 'ALL'
+                ? 'सर्व उपकेंद्रे'
+                : subcenters.find((s) => s.id === selectedSubcenterId)?.subcenterName || selectedSubcenterId,
+          },
+          {
+            label: 'स्थिती',
+            value:
+              statusFilter === 'ALL'
+                ? 'सर्व'
+                : statusFilter === 'TESTED_ONLY'
+                ? 'केवळ संकलित'
+                : statusFilter === 'PENDING_ONLY'
+                ? 'केवळ संकलन बाकी'
+                : '> ३ महिने प्रलंबित',
+          },
+          { label: 'वर्ष व महिना', value: `${selectedMonthObj.name} ${selectedYear}` },
+        ]}
+        summaryStats={[
+          { label: 'एकूण उपकेंद्रे', value: planData.plans.length, colorClass: 'text-slate-900' },
+          { label: 'एकूण पाणी स्त्रोत', value: planData.overall.totalSources, colorClass: 'text-cyan-800' },
+          { label: 'संकलित नमुने', value: planData.overall.totalTestedThisMonth, colorClass: 'text-emerald-700' },
+          { label: 'संकलन बाकी', value: planData.overall.totalPendingThisMonth, colorClass: 'text-amber-700' },
+          { label: '३+ महिने प्रलंबित', value: planData.overall.totalOverdue3Months, colorClass: 'text-rose-700' },
+          { label: 'मासिक कव्हरेज %', value: `${planData.overall.overallCoveragePercentage}%`, colorClass: 'text-indigo-800' },
+        ]}
+        columns={[
+          { header: 'उपकेंद्र नाव', accessor: 'subcenterName', width: '160px' },
+          { header: 'गाव संख्या', accessor: 'villagesCount', align: 'center', width: '85px' },
+          { header: 'एकूण स्त्रोत', accessor: 'totalSources', align: 'center', width: '90px' },
+          { header: 'संकलित नमुने', accessor: 'testedThisMonthCount', align: 'center', width: '95px' },
+          { header: 'संकलन बाकी', accessor: 'pendingThisMonthCount', align: 'center', width: '90px' },
+          { header: '३+ महिने प्रलंबित', accessor: 'overdue3MonthsCount', align: 'center', width: '95px' },
+          { header: 'कव्हरेज %', accessor: 'coveragePercentage', align: 'center', width: '85px' },
+        ]}
+        data={planData.plans.map((p) => ({
+          subcenterName: p.subcenterName,
+          villagesCount: new Set(p.sourcesList.map((s) => s.villageName)).size,
+          totalSources: p.totalSources,
+          testedThisMonthCount: p.testedThisMonthCount,
+          pendingThisMonthCount: p.pendingThisMonthCount,
+          overdue3MonthsCount: p.overdue3MonthsCount,
+          coveragePercentage: `${p.coveragePercentage}%`,
+        }))}
+        orientationDefault="landscape"
+        currentUser={currentUser}
+        customRemarks="सदर मासिक आराखड्यानुसार सर्व उपकेंद्रांनी १००% उद्दिष्ट वेळेत पूर्ण करून अहवाल सादर करावा."
+      />
     </div>
   );
 };

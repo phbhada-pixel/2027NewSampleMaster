@@ -17,11 +17,13 @@ import {
   ShieldAlert,
   PlusCircle,
   FileSpreadsheet,
+  FileText,
   RefreshCw,
   Eye,
   AlertTriangle,
   BadgeAlert,
 } from 'lucide-react';
+import { OfficialReportPdfModal } from './OfficialReportPdfModal';
 
 interface WaterBiologicalOverdueReportViewProps {
   currentUser: User;
@@ -52,6 +54,7 @@ export const WaterBiologicalOverdueReportView: React.FC<WaterBiologicalOverdueRe
   );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isPrintMode, setIsPrintMode] = useState<boolean>(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
 
   // Cascading village filter
   const availableVillages = useMemo(() => {
@@ -192,6 +195,15 @@ export const WaterBiologicalOverdueReportView: React.FC<WaterBiologicalOverdueRe
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsPdfModalOpen(true)}
+              className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer ring-1 ring-rose-400/50"
+              title="अधिकृत शासकीय नमुना अहवाल PDF स्वरूपात जनरेट करा"
+            >
+              <FileText className="w-4 h-4 text-rose-100" />
+              <span>शासकीय अहवाल PDF</span>
+            </button>
             <button
               onClick={handlePrint}
               className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
@@ -678,6 +690,81 @@ export const WaterBiologicalOverdueReportView: React.FC<WaterBiologicalOverdueRe
           </div>
         </div>
       </div>
+
+      {/* Official Government Formatted PDF Modal */}
+      <OfficialReportPdfModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        reportTitle="३ महिने जैविक पाणी नमुना प्रलंबित स्त्रोत अहवाल"
+        reportSubtitle="प्राथमिक आरोग्य केंद्र भादा, ता. औसा, जि. लातूर — सार्वजनिक आरोग्य विभाग"
+        documentNumber={`जा.क्र./प्राआकेंभादा/पाणी-विलंब/${new Date().getFullYear()}/${Math.floor(100 + Math.random() * 900)}`}
+        periodText={`संदर्भ दिनांक: ${referenceDate}`}
+        filterDetails={[
+          {
+            label: 'उपकेंद्र',
+            value:
+              selectedSubcenterId === 'ALL'
+                ? 'सर्व उपकेंद्रे'
+                : subcenters.find((s) => s.id === selectedSubcenterId)?.subcenterName || selectedSubcenterId,
+          },
+          {
+            label: 'गाव',
+            value:
+              selectedVillageId === 'ALL'
+                ? 'सर्व गावे'
+                : villages.find((v) => v.id === selectedVillageId)?.name || selectedVillageId,
+          },
+          {
+            label: 'वर्गवारी',
+            value:
+              filterCategory === 'OVERDUE_ONLY'
+                ? 'प्रलंबित स्त्रोत'
+                : filterCategory === 'OVERDUE_3M'
+                ? '३ ते ६ महिने'
+                : filterCategory === 'OVERDUE_6M'
+                ? '> ६ महिने'
+                : filterCategory === 'CRITICAL_NEVER'
+                ? 'कधीही तपासणी नाही'
+                : 'सर्व',
+          },
+        ]}
+        summaryStats={[
+          { label: 'एकूण स्त्रोत', value: reportData.stats.totalWaterSources, colorClass: 'text-slate-900' },
+          { label: '३+ महिने प्रलंबित', value: reportData.stats.overdue3MonthsCount, colorClass: 'text-rose-700' },
+          { label: '६+ महिने प्रलंबित', value: reportData.stats.overdue6MonthsCount, colorClass: 'text-purple-700' },
+          { label: 'कधीही न तपासलेले', value: reportData.stats.neverTestedCount, colorClass: 'text-red-800' },
+          { label: 'वेळेवर तपासलेले', value: reportData.stats.testedIn3MonthsCount, colorClass: 'text-emerald-700' },
+        ]}
+        columns={[
+          { header: 'स्त्रोत कोड', accessor: 'sourceCode', align: 'center', width: '85px' },
+          { header: 'स्त्रोत नाव व पत्ता', accessor: 'sourceName', width: '160px' },
+          { header: 'उपकेंद्र', accessor: 'subcenterName', width: '110px' },
+          { header: 'गाव', accessor: 'villageName', width: '100px' },
+          { header: 'स्त्रोत प्रकार', accessor: 'sourceType', width: '100px' },
+          { header: 'शेवटचा नमुना दिनांक', accessor: 'lastTestedDate', align: 'center', width: '100px' },
+          { header: 'विलंब (दिवस)', accessor: 'daysSinceLastTest', align: 'center', width: '85px' },
+          { header: 'जोखीम वर्गवारी', accessor: 'riskCategory', align: 'center', width: '100px' },
+        ]}
+        data={filteredItems.map((item) => ({
+          sourceCode: item.sourceCode,
+          sourceName: `${item.sourceName}${item.locationAddress ? ` (${item.locationAddress})` : ''}`,
+          subcenterName: item.subcenterName,
+          villageName: item.villageName,
+          sourceType: item.sourceType,
+          lastTestedDate: item.lastTestedDate || 'कधीही नाही',
+          daysSinceLastTest: item.daysSinceLastTest !== null ? `${item.daysSinceLastTest} दिवस` : 'कधीही नाही',
+          riskCategory: item.isNeverTested
+            ? 'अत्यंत गंभीर'
+            : item.isOverdue6Months
+            ? 'उच्च जोखीम (>६ महिने)'
+            : item.isOverdue3Months
+            ? 'मध्यम जोखीम (>३ महिने)'
+            : 'सामान्य',
+        }))}
+        orientationDefault="landscape"
+        currentUser={currentUser}
+        customRemarks="सदर अहवालानुसार ३ महिन्यांपेक्षा अधिक काळ तपासणी न झालेल्या सर्व पाणी स्त्रोतांचे तात्काळ नमुने संकलित करून जिल्हा प्रयोगशाळेत पाठविण्याचे आदेश देण्यात येत आहेत."
+      />
     </div>
   );
 };

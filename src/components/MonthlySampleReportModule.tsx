@@ -38,6 +38,7 @@ import { OfficialReportPdfModal, PdfTableColumn } from './OfficialReportPdfModal
 interface MonthlySampleReportModuleProps {
   currentUser: User;
   initialTab?: 'monthly' | 'progressive' | 'sample-type' | 'consolidated' | 'subcenter' | 'village' | 'trend' | 'water-overdue-3m' | 'monthly-water-subcenter';
+  exportPdfTrigger?: number;
   onNavigateToSampleEntry?: (sourceInfo: {
     sampleTypeId: string;
     subcenterId: string;
@@ -131,6 +132,7 @@ const MONTHS_MARATHI = [
 export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps> = ({
   currentUser,
   initialTab = 'monthly',
+  exportPdfTrigger,
   onNavigateToSampleEntry,
 }) => {
   const [, setTick] = useState(0);
@@ -174,6 +176,13 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
     }
   }, [initialTab]);
 
+  // Global PDF export trigger reaction
+  useEffect(() => {
+    if (exportPdfTrigger && exportPdfTrigger > 0) {
+      setIsPdfModalOpen(true);
+    }
+  }, [exportPdfTrigger]);
+
   // Consolidated Timeframe Toggle ('monthly' or 'progressive')
   const [consolidatedTimeframe, setConsolidatedTimeframe] = useState<'monthly' | 'progressive'>('monthly');
 
@@ -187,6 +196,7 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
   const [drillDown, setDrillDown] = useState<DrillDownContext | null>(null);
   const [drillSearchQuery, setDrillSearchQuery] = useState<string>('');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
+  const [isDrillPdfOpen, setIsDrillPdfOpen] = useState<boolean>(false);
 
   // Cascading Filter: Subcenter -> Village
   const availableVillages = useMemo(() => {
@@ -694,6 +704,59 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
           percentage: pct,
         };
       });
+    } else if (activeTab === 'water-overdue-3m') {
+      const overdueData = clientStore.getWaterSourcesBiologicalDueReport({
+        subcenterId: selectedSubcenterId,
+        villageId: selectedVillageId,
+      });
+      title = `३ महिने जैविक पाणी नमुना प्रलंबित स्त्रोत अहवाल`;
+      columns = [
+        { header: 'स्त्रोत कोड', accessor: 'sourceCode', align: 'center', width: '85px' },
+        { header: 'स्त्रोत नाव व ठिकाण', accessor: 'sourceName', width: '160px' },
+        { header: 'उपकेंद्र', accessor: 'subcenterName', width: '110px' },
+        { header: 'गाव', accessor: 'villageName', width: '100px' },
+        { header: 'स्त्रोत प्रकार', accessor: 'sourceType', width: '100px' },
+        { header: 'शेवटचा नमुना दिनांक', accessor: 'lastTestedDate', align: 'center', width: '100px' },
+        { header: 'विलंब (दिवस)', accessor: 'daysSinceLastTest', align: 'center', width: '85px' },
+        { header: 'जोखीम वर्गवारी', accessor: 'riskLevel', align: 'center', width: '100px' },
+      ];
+      rows = overdueData.items.map((item) => ({
+        sourceCode: item.sourceCode,
+        sourceName: `${item.sourceName}${item.locationAddress ? ` (${item.locationAddress})` : ''}`,
+        subcenterName: item.subcenterName,
+        villageName: item.villageName,
+        sourceType: item.sourceType,
+        lastTestedDate: item.lastTestedDate || 'कधीही नाही',
+        daysSinceLastTest: item.daysSinceLastTest !== null ? `${item.daysSinceLastTest} दिवस` : 'कधीही नाही',
+        riskLevel: item.isNeverTested
+          ? 'अत्यंत गंभीर'
+          : item.isOverdue6Months
+          ? 'उच्च जोखीम'
+          : item.isOverdue3Months
+          ? 'मध्यम जोखीम'
+          : 'वेळेवर',
+      }));
+    } else if (activeTab === 'monthly-water-subcenter') {
+      const plan = clientStore.getMonthlySubcenterWaterPlan(selectedYear, selectedMonth, selectedSubcenterId);
+      title = `उपकेंद्रनिहाय मासिक पाणी स्त्रोत कृती आराखडा अहवाल (${monthName} ${selectedYear})`;
+      columns = [
+        { header: 'उपकेंद्र नाव', accessor: 'subcenterName', width: '150px' },
+        { header: 'गाव संख्या', accessor: 'villagesCount', align: 'center', width: '80px' },
+        { header: 'एकूण स्त्रोत', accessor: 'totalSources', align: 'center', width: '90px' },
+        { header: 'संकलित नमुने', accessor: 'testedCount', align: 'center', width: '95px' },
+        { header: 'संकलन बाकी', accessor: 'pendingCount', align: 'center', width: '90px' },
+        { header: '३+ महिने प्रलंबित', accessor: 'overdueCount', align: 'center', width: '95px' },
+        { header: 'कव्हरेज %', accessor: 'coverageRate', align: 'center', width: '85px' },
+      ];
+      rows = plan.plans.map((sc) => ({
+        subcenterName: sc.subcenterName,
+        villagesCount: new Set(sc.sourcesList.map((s) => s.villageName)).size,
+        totalSources: sc.totalSources,
+        testedCount: sc.testedThisMonthCount,
+        pendingCount: sc.pendingThisMonthCount,
+        overdueCount: sc.overdue3MonthsCount,
+        coverageRate: `${sc.coveragePercentage}%`,
+      }));
     } else {
       // Default: monthly or progressive or sample-type
       title = isProgressivePeriod
@@ -2289,6 +2352,15 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
                 <span className="text-slate-600 font-semibold">
                   दर्शविलेले नमुने: {filteredDrillSamples.length} / {drillDown.samples.length}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setIsDrillPdfOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                  title="सदर ड्रिल-डाऊन नमुन्यांचा अधिकृत शासकीय अहवाल PDF तयार करा"
+                >
+                  <FileText className="w-3.5 h-3.5 text-rose-200" />
+                  <span>ड्रिल-डाऊन PDF</span>
+                </button>
               </div>
             </div>
 
@@ -2363,10 +2435,19 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIsDrillPdfOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="सदर ड्रिल-डाऊन नमुन्यांचा अधिकृत शासकीय अहवाल PDF तयार करा"
+              >
+                <FileText className="w-4 h-4 text-rose-200" />
+                <span>शासकीय ड्रिल-डाऊन PDF अहवाल जनरेट करा</span>
+              </button>
               <button
                 onClick={closeDrillDown}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-all"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
               >
                 बंद करा (Close)
               </button>
@@ -2389,6 +2470,116 @@ export const MonthlySampleReportModule: React.FC<MonthlySampleReportModuleProps>
         orientationDefault={pdfDataConfig.orientation}
         currentUser={currentUser}
       />
+
+      {/* Drill-down Official Government Formatted PDF Modal */}
+      {drillDown && (
+        <OfficialReportPdfModal
+          isOpen={isDrillPdfOpen}
+          onClose={() => setIsDrillPdfOpen(false)}
+          reportTitle={`तपशीलवार नमुना तपासणी व ऑडिट अहवाल — ${drillDown.title}`}
+          reportSubtitle={`${drillDown.subtitle} • प्राथमिक आरोग्य केंद्र भादा`}
+          documentNumber={`जा.क्र./प्राआकेंभादा/ड्रिलडाऊन/${selectedYear}/${Math.floor(100 + Math.random() * 900)}`}
+          periodText={
+            activeTab === 'progressive'
+              ? `${progressiveStartName} ते ${monthName} ${selectedYear}`
+              : `${monthName} ${selectedYear}`
+          }
+          filterDetails={[
+            { label: 'तपशील', value: drillDown.title },
+            { label: 'वर्गवारी', value: drillDown.subtitle },
+            {
+              label: 'उपकेंद्र',
+              value:
+                selectedSubcenterId === 'ALL'
+                  ? 'सर्व'
+                  : subcenters.find((s) => s.id === selectedSubcenterId)?.subcenterName || selectedSubcenterId,
+            },
+            {
+              label: 'गाव',
+              value:
+                selectedVillageId === 'ALL'
+                  ? 'सर्व'
+                  : villages.find((v) => v.id === selectedVillageId)?.name || selectedVillageId,
+            },
+          ]}
+          summaryStats={[
+            { label: 'एकूण नमुने', value: filteredDrillSamples.length, colorClass: 'text-slate-900' },
+            {
+              label: 'प्रमाणित (Fit)',
+              value: filteredDrillSamples.filter((s) => classifySampleResult(s) === 'CERTIFIED').length,
+              colorClass: 'text-emerald-700',
+            },
+            {
+              label: 'अप्रमाणित (Unfit)',
+              value: filteredDrillSamples.filter((s) => classifySampleResult(s) === 'UNCERTIFIED').length,
+              colorClass: 'text-rose-700',
+            },
+            {
+              label: 'अप्राप्त (Pending)',
+              value: filteredDrillSamples.filter((s) => classifySampleResult(s) === 'PENDING').length,
+              colorClass: 'text-amber-700',
+            },
+          ]}
+          columns={[
+            { header: 'नमुना आयडी', accessor: 'id', width: '85px', align: 'center' },
+            { header: 'संकलन दिनांक', accessor: 'collectionDate', width: '85px', align: 'center' },
+            {
+              header: 'गाव व उपकेंद्र',
+              width: '130px',
+              render: (row) => (
+                <div>
+                  <div className="font-bold text-slate-900">{row.villageName}</div>
+                  <div className="text-[9px] text-slate-500">
+                    {row.subcenterName || row.subcenter || '—'}
+                  </div>
+                </div>
+              ),
+            },
+            {
+              header: 'स्त्रोत / रुग्ण / संस्था',
+              width: '150px',
+              render: (row) => (
+                <span className="font-semibold text-slate-900">
+                  {row.sourceName || row.shopOrInstitutionName || row.patientName || '—'}
+                </span>
+              ),
+            },
+            { header: 'नमुना प्रकार', accessor: 'sampleTypeName', width: '110px' },
+            {
+              header: 'निकाल वर्गवारी',
+              width: '90px',
+              align: 'center',
+              render: (row) => {
+                const cat = classifySampleResult(row);
+                return (
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      cat === 'CERTIFIED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : cat === 'PENDING'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-rose-100 text-rose-800'
+                    }`}
+                  >
+                    {getResultCategoryLabel(cat)}
+                  </span>
+                );
+              },
+            },
+            {
+              header: 'प्रयोगशाळा निकाल',
+              accessor: 'result',
+              width: '120px',
+              render: (row) => row.result || 'प्रलंबित',
+            },
+          ]}
+          data={filteredDrillSamples}
+          orientationDefault="landscape"
+          currentUser={currentUser}
+          customRemarks="सदर अहवाल प्राथमिक आरोग्य केंद्र भादा अंतर्गत ड्रिल-डाऊन केलेल्या नमुन्यांच्या अधिकृत चाचणी निकालांवर आधारित प्रमाणित करण्यात आला आहे."
+        />
+      )}
+
     </div>
   );
 };

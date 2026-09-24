@@ -51,6 +51,7 @@ interface MasterRegisterModuleProps {
   onEditSample?: (sample: SampleRecord) => void;
   onNavigate?: (tab: string, filter?: Record<string, string>) => void;
   onBack?: () => void;
+  exportPdfTrigger?: number;
 }
 
 export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
@@ -59,6 +60,7 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
   onEditSample,
   onNavigate,
   onBack,
+  exportPdfTrigger,
 }) => {
   const sampleTypes = clientStore.getSampleTypes();
   const villages = clientStore.getVillages();
@@ -98,11 +100,21 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
     }
   }, [initialFilter]);
 
+  // Global PDF export trigger reaction
+  React.useEffect(() => {
+    if (exportPdfTrigger && exportPdfTrigger > 0) {
+      setIsPdfModalOpen(true);
+    }
+  }, [exportPdfTrigger]);
+
   // Selected sample for detailed view modal
   const [viewingSample, setViewingSample] = useState<SampleRecord | null>(null);
+  const [sampleForCertificate, setSampleForCertificate] = useState<SampleRecord | null>(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
 
-  const currentSampleType = sampleTypes.find((t) => t.id === activeTypeId) || sampleTypes[0];
+  const currentSampleType = activeTypeId === 'ALL'
+    ? { id: 'ALL', codePrefix: 'ALL', name: 'All Types', marathiName: 'सर्व नमुना प्रकार (All Types)' }
+    : (sampleTypes.find((t) => t.id === activeTypeId) || sampleTypes[0]);
 
   // Cascading hierarchy calculations:
   // 1. Subcenter -> Villages
@@ -434,7 +446,27 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
 
       {/* 1. Register Section Tabs */}
       <div className="bg-white rounded-xl border border-slate-200 p-2 shadow-sm print:hidden">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          {/* All Types Tab */}
+          <button
+            onClick={() => setActiveTypeId('ALL')}
+            className={`p-2.5 rounded-lg text-left transition-all border flex items-center gap-2.5 ${
+              activeTypeId === 'ALL'
+                ? 'bg-emerald-800 text-white border-emerald-900 shadow-sm ring-1 ring-emerald-600'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+            }`}
+          >
+            <div className={`p-1.5 rounded ${activeTypeId === 'ALL' ? 'bg-white/20' : 'bg-white shadow-2xs'}`}>
+              <Table className="w-4 h-4 text-emerald-700" />
+            </div>
+            <div className="overflow-hidden">
+              <div className="font-bold text-xs truncate leading-snug">सर्व नमुने (All)</div>
+              <div className={`text-[10px] font-mono ${activeTypeId === 'ALL' ? 'text-emerald-200' : 'text-slate-500'}`}>
+                ALL-TYPES
+              </div>
+            </div>
+          </button>
+
           {sampleTypes.map((st) => {
             const isActive = activeTypeId === st.id;
             return (
@@ -904,17 +936,24 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => setViewingSample(sample)}
-                          className="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors"
+                          className="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors cursor-pointer"
                           title="तपशील पहा (View Details)"
                         >
                           <Eye className="w-4 h-4 text-emerald-700" />
+                        </button>
+                        <button
+                          onClick={() => setSampleForCertificate(sample)}
+                          className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded transition-colors cursor-pointer"
+                          title="अधिकृत शासकीय नमुना प्रमाणपत्र PDF (Certificate PDF)"
+                        >
+                          <FileText className="w-4 h-4 text-rose-700" />
                         </button>
                         {currentUser.role === 'ADMIN' && (
                           <>
                             {sample.isActive === false ? (
                               <button
                                 onClick={() => handleRestore(sample)}
-                                className="p-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded transition-colors"
+                                className="p-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded transition-colors cursor-pointer"
                                 title="पूर्ववत करा (Restore Sample)"
                               >
                                 <RotateCcw className="w-4 h-4 text-emerald-700" />
@@ -922,7 +961,7 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
                             ) : (
                               <button
                                 onClick={() => handleSoftDelete(sample)}
-                                className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded transition-colors"
+                                className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded transition-colors cursor-pointer"
                                 title="निष्क्रिय करा (Soft Delete Sample)"
                               >
                                 <Trash2 className="w-4 h-4 text-rose-600" />
@@ -1308,10 +1347,22 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
               <span>नोंदणी वेळ: {new Date(viewingSample.createdAt).toLocaleString('mr-IN')}</span>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between items-center pt-2">
               <button
+                type="button"
+                onClick={() => {
+                  setSampleForCertificate(viewingSample);
+                }}
+                className="flex items-center gap-1.5 bg-rose-700 hover:bg-rose-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                title="सदर नमुन्याचे अधिकृत तपासणी व गुणवत्ता प्रमाणपत्र PDF तयार करा"
+              >
+                <FileText className="w-3.5 h-3.5 text-rose-200" />
+                <span>शासकीय नमुना प्रमाणपत्र PDF</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setViewingSample(null)}
-                className="bg-slate-800 text-white px-4 py-1.5 rounded-lg text-xs font-semibold"
+                className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
               >
                 बंद करा
               </button>
@@ -1512,6 +1563,34 @@ export const MasterRegisterModule: React.FC<MasterRegisterModuleProps> = ({
         ]}
         data={sortedSamples}
       />
+
+      {/* Single Sample Official Certificate PDF Modal */}
+      {sampleForCertificate && (
+        <OfficialReportPdfModal
+          isOpen={!!sampleForCertificate}
+          onClose={() => setSampleForCertificate(null)}
+          reportTitle="अधिकृत नमुना तपासणी व गुणवत्ता प्रमाणपत्र"
+          reportSubtitle="प्राथमिक आरोग्य केंद्र भादा, ता. औसा, जि. लातूर — सार्वजनिक आरोग्य विभाग"
+          documentNumber={`जा.क्र./प्राआकेंभादा/प्रमाणपत्र/${new Date().getFullYear()}/${sampleForCertificate.id}`}
+          periodText={`संकलन दिनांक: दि. ${sampleForCertificate.collectionDate}`}
+          filterDetails={[
+            { label: 'नमुना आयडी', value: sampleForCertificate.id },
+            { label: 'नमुना प्रकार', value: sampleForCertificate.sampleTypeName },
+            { label: 'गाव', value: sampleForCertificate.villageName },
+            {
+              label: 'उपकेंद्र',
+              value: sampleForCertificate.subcenterName || sampleForCertificate.subcenter || '—',
+            },
+          ]}
+          columns={[]}
+          data={[]}
+          singleSampleRecord={sampleForCertificate}
+          orientationDefault="portrait"
+          currentUser={currentUser}
+          customRemarks="सदर नमुना तपासणी अहवाल प्राथमिक आरोग्य केंद्र भादा अंतर्गत अधिकृत मान्यताप्राप्त शासकीय प्रयोगशाळेच्या तपासणी निष्कर्षांवर आधारित प्रमाणित करण्यात येत आहे."
+        />
+      )}
     </div>
   );
 };
+

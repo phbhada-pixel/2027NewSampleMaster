@@ -29,6 +29,7 @@ import {
   Calendar,
   Layers,
   Sparkles,
+  FileText,
 } from 'lucide-react';
 
 interface NavHistoryEntry {
@@ -58,6 +59,13 @@ export default function App() {
     searchQuery?: string;
     initialTab?: string;
   }>({});
+
+  // Global PDF export trigger for Master Register & Monthly Report
+  const [pdfTriggerTimestamp, setPdfTriggerTimestamp] = useState<number>(0);
+
+  const handleGlobalPdfExport = () => {
+    setPdfTriggerTimestamp(Date.now());
+  };
 
   const handleSwitchUser = (user: User) => {
     clientStore.setCurrentUser(user);
@@ -174,6 +182,17 @@ export default function App() {
 
             {/* Quick Action Shortcuts on Header */}
             <div className="flex items-center gap-2 self-end sm:self-center">
+              {/* Global Export to PDF Button for Master Register and Monthly Report */}
+              {(activeTab === 'master-register' || activeTab === 'monthly-report') && (
+                <button
+                  onClick={handleGlobalPdfExport}
+                  className="text-xs bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ring-1 ring-rose-500/50"
+                  title="सद्यस्थितीतील माहितीचा अधिकृत शासकीय PDF अहवाल तयार करा"
+                >
+                  <FileText className="w-3.5 h-3.5 text-rose-200" />
+                  <span>शासकीय अहवाल PDF</span>
+                </button>
+              )}
               {activeTab !== 'sample-entry' && (
                 <button
                   onClick={() => handleNavigate('sample-entry')}
@@ -260,6 +279,7 @@ export default function App() {
             initialFilter={navigationFilter}
             onNavigate={handleNavigate}
             onBack={handleBack}
+            exportPdfTrigger={pdfTriggerTimestamp}
           />
         )}
 
@@ -268,6 +288,7 @@ export default function App() {
           <MonthlySampleReportModule
             currentUser={currentUser}
             initialTab={(navigationFilter as any)?.initialTab || 'monthly'}
+            exportPdfTrigger={pdfTriggerTimestamp}
             onNavigateToSampleEntry={(sourceInfo) => {
               handleNavigate('sample-entry', {
                 sampleTypeId: sourceInfo.sampleTypeId,
